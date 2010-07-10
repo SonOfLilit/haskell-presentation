@@ -9,7 +9,6 @@ Ignore this
 > import qualified List
 > import Data.List
 > import Data.Ord
-> import Monad
 
 Hello, my name is Haskell
 =========================
@@ -155,11 +154,10 @@ Data Structure
 
 > data Player = Player String (Nim -> IO Move)
 > instance Show Player where show (Player name _) = name
-> move (Player _ f) = f
->
+> getMove (Player _ f) = f
 > data Players = Players Player Player
 > 
-> data Score = Lose | NotOver | Win deriving (Eq, Ord)
+> data Score = Lose | NotFinished | Win deriving (Eq, Ord)
 > 
 > data Nim = Nim [Matches]
 >     deriving Show
@@ -176,13 +174,14 @@ Rules of the game
 =================
 
 > apply :: Move -> Nim -> Nim
-> apply (Move i k) (Nim stacks) | k > 0 && s >= k = Nim (h ++ [s-k] ++ t)
+> apply (Move i k) (Nim stacks) | legal = Nim (h ++ [s-k] ++ t)
 >   where (h, (s: t)) = splitAt i stacks
+>         legal = k > 0 && s >= k
 > apply _ _ = undefined
 
 > score :: Nim -> Score
 > score (Nim stacks) | all (== 0) stacks = Lose
-> score _ = NotOver
+> score _ = NotFinished
 
 Main loop
 =========
@@ -190,38 +189,36 @@ Main loop
 > playNim :: Players -> Nim -> IO Player
 > playNim (Players p1 p2) nim = do
 >     putStrLn (show p1 ++ "'s turn")
->     m <- move p1 nim
+>     m <- getMove p1 nim
 >     putStrLn (show p1 ++ "'s move is: " ++ show m)
 >     let nim' = apply m nim
 >     let result = if score nim' == Lose 
 >                  then return p2 
 >                  else playNim (Players p2 p1) nim'
 >     result
->
 
 return :: (Monad m) => a -> m a
 instance Monad IO
 
-Human Player
+Human player
 ============
 
 > humanMove :: Nim -> IO Move
 > humanMove nim = do
 >     putStrLn (showNim nim)
->     putStrLn ("Choose a stack:")
+>     putStrLn "Choose a stack:"
 >     stack <- getLine
->     putStrLn ("Choose amount:")
+>     putStrLn "Choose amount:"
 >     amount <- getLine
 >     return (Move (read stack - 1) (Matches (read amount)))
 > 
-> showNim :: Nim -> String
 > showNim (Nim stacks) =
->   unlines [show i ++ ": " ++ show k | (i, k) <- zip [1..] stacks]
->
-> humanPlayer name = Player name humanMove
+>   unlines [show i ++": "++ show k | (i, k) <- zip [1..] stacks]
 > 
+> humanPlayer name = Player name humanMove
 > humanVsHumanNim nim = playNim players nim 
->   where players = Players (humanPlayer "Aur") (humanPlayer "Oleg")
+>   where players = Players (humanPlayer "Aur") 
+>                           (humanPlayer "Heru")
 
 Runtime bugs I had
 ==================
@@ -250,30 +247,30 @@ run for the first time in C? In Python?
 
 - All of these bugs were immediately apparent. No edge case chasing.
 
-Computing a move's result
+Computing an optimal move
 =========================
 
 > evaluateAllMoves :: Nim -> [(Move, Score)]
 > evaluateAllMoves nim = map evaluate (legalMoves nim)
 >   where evaluate m = (m, score' (apply m nim))
-> 
 > bestMove nim = maximumBy (comparing snd) (evaluateAllMoves nim)
 >
-> score' nim = case score nim of
->   NotOver -> reverseScore (snd (bestMove nim))
->   s -> s
+> score' nim = case score nim of 
+>   Lose -> Lose
+>   _ -> negateScore (snd (bestMove nim))
+> negateScore Win = Lose
+> negateScore Lose = Win
 > 
 > legalMoves :: Nim -> [Move]
-> legalMoves (Nim stacks) = [Move i k | i <- [0..length stacks - 1],
->                                             k <- [1..stacks !! i]]
+> legalMoves (Nim stacks) = 
+>    [Move i k | i <- [0..length stacks - 1],
+>                      k <- [1..stacks !! i]]
 > 
-> reverseScore :: Score -> Score
-> reverseScore Lose = Win
-> reverseScore Win = Lose
-> reverseScore NotOver = NotOver
->
 > computerMove nim = return (fst (bestMove nim))
-> 
+
+Let's play!
+===========
+
 > humanVsComputerNim nim = playNim players nim
 >   where players = Players (humanPlayer "Aur") 
 >                           (Player "Oleg" computerMove)
@@ -281,37 +278,105 @@ Computing a move's result
 First run
 =========
 
-Seemed to work! I lost every time I was the losing player or made a mistake!
+Seemed to work! I lost every time I was the losing player or made a
+mistake
 
 Exploring the game
 ==================
 
-First, lets write a pure solver
+All this IO is very uncomfortable.
+
+First, lets write a pure solver.
 
 > data PurePlayer = PurePlayer String (Nim -> Move)
 > instance Show PurePlayer where show (PurePlayer name _) = name
 > pureGetMove (PurePlayer _ f) = f
 > data PurePlayers = PurePlayers PurePlayer PurePlayer
-> pureMove nim = fst (bestMove nim)
-> computerPlayer name = PurePlayer name pureMove
+
+Pure Nim
+========
+
+> pureComputerMove nim = fst (bestMove nim)
+> 
 > pureNim (PurePlayers _ p2) nim | score nim == Lose = p2
 > pureNim (PurePlayers p1 p2) nim =
->   let m = pureGetMove p1 nim
->       nim' = apply m nim
->   in if score nim' == Lose 
->      then p2 
->      else pureNim (PurePlayers p2 p1) nim'
+>   if score nim' == Lose 
+>   then p2 
+>   else pureNim (PurePlayers p2 p1) nim'
+>     where m = pureGetMove p1 nim
+>           nim' = apply m nim
 >
+> computerPlayer name = PurePlayer name pureComputerMove
 > computerNim nim = pureNim players nim
->   where players = PurePlayers (computerPlayer "A") (computerPlayer "B")
->
-> nim2WinTable n =[[computerNim (Nim [i, j]) | j <- range] | i <- range]
->   where range = [0..n]
+>   where players = PurePlayers (computerPlayer "A")
+>                               (computerPlayer "B")
 
-nim2WinTable 4 gives us:
+And lets explore!
+=================
 
-[[B,B,A,A,A],
- [B,A,A,A,A],
- [A,A,B,A,A],
- [A,A,A,B,A],
- [A,A,A,A,B]]
+> nim2Table n =
+>   [[computerNim (Nim [i, j]) | j <- range] | i <- range]
+>     where range = [0..n]
+
+nim2Table 4 gives us:
+
+    [[B,B,A,A,A],
+     [B,A,A,A,A],
+     [A,A,B,A,A],
+     [A,A,A,B,A],
+     [A,A,A,A,B]]
+
+But it is so slow...
+====================
+
+nim2Table 7 takes 3.42 seconds on my old laptop, but nim2Table 8 takes
+30 seconds, and it gets worse. Lets try to optimize a bit.
+
+We will try to memoize results of bestMove.
+
+To keep the code simple, we will only tackle nim2.
+
+Memoizing
+=========
+
+> fastBestMove' (Nim [Matches a, Matches b]) = bests !! a !! b
+> fastBestMove' nim = fastBestMove nim
+> 
+> bests = [[fastBestMove (Nim [a, b]) | b <- [0..]] | a <- [0..]]
+> 
+> fastBestMove nim = maximumBy (comparing snd)
+>                              (fastEvaluateAllMoves nim)
+> 
+> fastEvaluateAllMoves nim = map evaluate (legalMoves nim)
+>   where evaluate m = (m, fastScore' (apply m nim))
+> 
+> fastScore' nim = case score nim of 
+>   Lose -> Lose
+>   _ -> negateScore (snd (fastBestMove' nim))
+
+And let's play!
+===============
+
+> fastComputerMove nim = fst (fastBestMove' nim)
+> fastComputerPlayer name = PurePlayer name fastComputerMove
+> 
+> fastNim nim = pureNim players nim
+>   where players = PurePlayers (fastComputerPlayer "A")
+>                               (fastComputerPlayer "B")
+> 
+> fastNim2Table n =
+>   [[fastNim (Nim [i, j]) | j <- range] | i <- range]
+>     where range = [0..n]
+
+*Success!* fastNim2Table 20 executes within the blink of an eye
+(profiler reports 0.04 seconds)
+
+Parallelization
+===============
+
+What would it take to parallelize this?
+
+Nothing! Just setting a compiler flag!
+
+We only know how to do this for functional languages like Haskell.
+
