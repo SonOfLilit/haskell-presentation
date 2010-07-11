@@ -380,8 +380,13 @@ Nothing! Just setting a compiler flag!
 
 We only know how to do this for functional languages like Haskell.
 
-Parallelization, Abstraction, Mathematics and Programming
-=========================================================
+Any Questions Up Until Now?
+===========================
+
+Don't worry, we are not done yet...
+
+Parallelization, Abstraction, Mathematics
+=========================================
 
 I will show an example that I read at sigfpe's blog at
 <blog.sigfpe.com/>, in a post titled "An Approach to Algorithm
@@ -419,6 +424,11 @@ In Haskell:
 >
 > infinity :: Double
 > infinity = 1/0
+
+Testing it
+==========
+
+Todo: Introduce QuickCheck.
 
 Running it
 ==========
@@ -521,8 +531,8 @@ get to (1, 0, 1)!
 
 And we can parallelize it:
 
-## TODO: This line is wrong. Do the math and correct it. Preferrably
-after sleep.
+## TODO: This line may be wrong. Do the math and correct
+it. Preferrably after sleep.
 
     let f = solution3', then
     matrix (f (s1 ++ s2)) == (matrix f s2) * (matrix f s1)
