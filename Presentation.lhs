@@ -1,8 +1,15 @@
 % Evaluating math with Haskell
 % Aur Heru Saraf
 
-Ignore this
-===========
+This presentation is Literate Haskell
+=====================================
+
+This means it can be executed.
+
+Indeed, if you are reading it at home, feel free to load it in GHCi
+and play with the definitions.
+
+So lets start with some imports, which you can ignore...
 
 > {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 > module Presentation where
@@ -155,15 +162,14 @@ Data Structure
 > data Player = Player String (Nim -> IO Move)
 > instance Show Player where show (Player name _) = name
 > getMove (Player _ f) = f
-> data Players = Players Player Player
 > 
 > data Score = Lose | NotFinished | Win deriving (Eq, Ord)
 > 
 > data Nim = Nim [Matches]
 >     deriving Show
-> 
 > newtype Matches = Matches Int deriving (Ord, Eq, Enum, Num)
-> instance Show Matches where show (Matches k) = show k ++ " match(es)"
+> instance Show Matches where
+>   show (Matches k) = show k ++ " match(es)"
 > 
 > data Move = Move Int Matches
 > instance Show Move where
@@ -186,15 +192,15 @@ Rules of the game
 Main loop
 =========
 
-> playNim :: Players -> Nim -> IO Player
-> playNim (Players p1 p2) nim = do
+> playNim :: Player -> Player -> Nim -> IO Player
+> playNim p1 p2 nim = do
 >     putStrLn (show p1 ++ "'s turn")
 >     m <- getMove p1 nim
 >     putStrLn (show p1 ++ "'s move is: " ++ show m)
 >     let nim' = apply m nim
 >     let result = if score nim' == Lose 
 >                  then return p2 
->                  else playNim (Players p2 p1) nim'
+>                  else playNim p2 p1 nim'
 >     result
 
 return :: (Monad m) => a -> m a
@@ -215,10 +221,8 @@ Human player
 > showNim (Nim stacks) =
 >   unlines [show i ++": "++ show k | (i, k) <- zip [1..] stacks]
 > 
-> humanPlayer name = Player name humanMove
-> humanVsHumanNim nim = playNim players nim 
->   where players = Players (humanPlayer "Aur") 
->                           (humanPlayer "Heru")
+> human name = Player name humanMove
+> humanVsHumanNim = playNim (human "Aur") (human "Heru") 
 
 Runtime bugs I had
 ==================
@@ -233,9 +237,9 @@ When I first ran the code, I found the following bugs:
 
 - The condition for apply was s > k and not s >= k
 
-- I made Matches a Read instance, so it tried to parse from user input
-a string like "Matches 1" (solution: read as Int and construct Matches
-myself)
+- I derived Read for Matches, so it tried to parse from user input a
+string like "Matches 1" (solution: read as Int and construct Matches
+from it myself)
 
 And then it worked!
 ===================
@@ -245,15 +249,18 @@ run for the first time in C? In Python?
 
 - I usually have a very high bug count for a programmer
 
-- All of these bugs were immediately apparent. No edge case chasing.
+- All of these bugs were immediately apparent. No edge case chasing
+
+- I never had a bug again in this area of the code
 
 Computing an optimal move
 =========================
 
-> evaluateAllMoves :: Nim -> [(Move, Score)]
+> computerMove nim = return (fst (bestMove nim))
+>
+> bestMove nim = maximumBy (comparing snd) (evaluateAllMoves nim)
 > evaluateAllMoves nim = map evaluate (legalMoves nim)
 >   where evaluate m = (m, score' (apply m nim))
-> bestMove nim = maximumBy (comparing snd) (evaluateAllMoves nim)
 >
 > score' nim = case score nim of 
 >   Lose -> Lose
@@ -264,16 +271,13 @@ Computing an optimal move
 > legalMoves :: Nim -> [Move]
 > legalMoves (Nim stacks) = 
 >    [Move i k | i <- [0..length stacks - 1],
->                      k <- [1..stacks !! i]]
-> 
-> computerMove nim = return (fst (bestMove nim))
+>                k <- [1..stacks !! i]]
 
 Let's play!
 ===========
 
-> humanVsComputerNim nim = playNim players nim
->   where players = Players (humanPlayer "Aur") 
->                           (Player "Oleg" computerMove)
+> humanVsComputerNim = playNim (human "Aur") 
+>                              (Player "Oleg" computerMove)
 
 First run
 =========
@@ -291,25 +295,22 @@ First, lets write a pure solver.
 > data PurePlayer = PurePlayer String (Nim -> Move)
 > instance Show PurePlayer where show (PurePlayer name _) = name
 > pureGetMove (PurePlayer _ f) = f
-> data PurePlayers = PurePlayers PurePlayer PurePlayer
 
 Pure Nim
 ========
 
 > pureComputerMove nim = fst (bestMove nim)
 > 
-> pureNim (PurePlayers _ p2) nim | score nim == Lose = p2
-> pureNim (PurePlayers p1 p2) nim =
+> pureNim _ p2 nim | score nim == Lose = p2
+> pureNim p1 p2 nim =
 >   if score nim' == Lose 
 >   then p2 
->   else pureNim (PurePlayers p2 p1) nim'
+>   else pureNim p2 p1 nim'
 >     where m = pureGetMove p1 nim
 >           nim' = apply m nim
 >
-> computerPlayer name = PurePlayer name pureComputerMove
-> computerNim nim = pureNim players nim
->   where players = PurePlayers (computerPlayer "A")
->                               (computerPlayer "B")
+> computer name = PurePlayer name pureComputerMove
+> computerNim = pureNim (computer "A") (computer "B")
 
 And lets explore!
 =================
@@ -358,11 +359,9 @@ And let's play!
 ===============
 
 > fastComputerMove nim = fst (fastBestMove' nim)
-> fastComputerPlayer name = PurePlayer name fastComputerMove
+> fastComputer name = PurePlayer name fastComputerMove
 > 
-> fastNim nim = pureNim players nim
->   where players = PurePlayers (fastComputerPlayer "A")
->                               (fastComputerPlayer "B")
+> fastNim = pureNim (fastComputer "A") (fastComputer "B")
 > 
 > fastNim2Table n =
 >   [[fastNim (Nim [i, j]) | j <- range] | i <- range]
@@ -531,7 +530,7 @@ get to (1, 0, 1)!
 
 And we can parallelize it:
 
-## TODO: This line may be wrong. Do the math and correct
+--## TODO: This line may be wrong. Do the math and correct
 it. Preferrably after sleep.
 
     let f = solution3', then
