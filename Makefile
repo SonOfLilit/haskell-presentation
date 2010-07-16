@@ -1,6 +1,6 @@
 .SUFFIXES: .lhs .html
 
-PANDOC-S5 = pandoc -f markdown+lhs -t s5 --standalone
+PANDOC-S5 = pandoc -f markdown+lhs --mathml -t s5 --standalone
 
 all: Presentation.html
 

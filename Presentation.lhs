@@ -16,6 +16,7 @@ So lets start with some imports, which you can ignore...
 > import qualified List
 > import Data.List
 > import Data.Ord
+> import Test.QuickCheck
 
 Hello, my name is Haskell
 =========================
@@ -388,7 +389,7 @@ Parallelization, Abstraction, Mathematics
 =========================================
 
 I will show an example that I read at sigfpe's blog at
-<blog.sigfpe.com/>, in a post titled "An Approach to Algorithm
+<http://blog.sigfpe.com/>, in a post titled "An Approach to Algorithm
 Parallelization". He deserves the whole credit.
 
 The problem
@@ -414,20 +415,12 @@ gets.
 
 In Haskell:
 
-> solution s = snd (solution' s (0, -infinity))
-> solution' :: (Ord t, Num t) => [t] -> (t, t) -> (t, t)
-> solution' [] (a, m) = (a, m)
-> solution' (x:xs) (a, m) = solution' xs (a', m')
+> solution1 s = snd (solution1' s (0, 0))
+> solution1' :: (Ord t, Num t) => [t] -> (t, t) -> (t, t)
+> solution1' [] (a, m) = (a, m)
+> solution1' (x:xs) (a, m) = solution1' xs (a', m')
 >   where a' = max (a + x) 0
 >         m' = max a' m
->
-> infinity :: Double
-> infinity = 1/0
-
-Testing it
-==========
-
-Todo: Introduce QuickCheck.
 
 Running it
 ==========
@@ -440,6 +433,49 @@ It worked on first try.
     0.0
 
 Looks good.
+
+Testing it
+==========
+
+QuickCheck is a very powerful testing tool for Haskell code. It lets
+us specify properties of our code (invariants) and it generates a lot
+of random data and asserts that the properties hold on the data.
+
+If it finds data for which the properties do not hold, it tries to
+simplify it to get the shortest input that makes our code fail.
+
+The types of data to generate, of course, are inferred from the code.
+
+Some tests
+==========
+
+All the tests accept a solution function as an argument, because we will want to test our different solutions.
+
+> isCorrectForOneItem solution x = (solution [x]) == max 0 x
+> isZeroForNegativeSequence solution s = (solution s') =~= 0
+>   where s' = map (negate . abs) s
+> isSumForPositiveSequence solution s = (solution s') =~= sum s'
+>   where s' = map abs s
+> isAtLeastMax solution s = (not (null s))==>(solution s) >= maximum s
+> growsUnderConcatenation solution s1 s2 =
+>   (solution (s1 ++ s2)) >= max (solution s1) (solution s2)
+> (=~=) :: Double -> Double -> Bool
+> a =~= b = (abs (b-a) < 0.00001)
+> 
+> test solution = do
+>   let q t = quickCheck (t solution)
+>   q isCorrectForOneItem
+>   q isSumForPositiveSequence
+>   q isZeroForNegativeSequence
+>   q isAtLeastMax
+>   q growsUnderConcatenation
+
+Running the tests
+=================
+
+> test1 = test solution1
+
+They all succeed on first try!
 
 Parallelizing it
 ================
@@ -460,10 +496,8 @@ and addition with multiplication.
 
 0 is the identity for addition so it should be replaced with 1, the identity for multiplication.
 
--infinity should similarly be replaced with 0.
-
 > solution2 s = m
->   where (_, m) = solution2' s (1, 0)
+>   where (_, m) = solution2' s (1, 1)
 > solution2' [] (a, m) = (a, m)
 > solution2' (x:xs) (a, m) = solution2' xs (a', m')
 >   where a' = (a * x) + 1
@@ -477,11 +511,11 @@ functions are easy to parallelize.
 
 Lets ignore the fact that it solves the wrong problem for now.
 
-That "1" was iterferring with the linearity we want. Lets replace it
-with a parameter on which the function will be linear.
+That "1" iterfers with the linearity we want. Lets replace it with a
+parameter on which the function will be linear.
 
 > solution3 s = m
->   where (_, m, _) = solution3' s (1, 0, 1)
+>   where (_, m, _) = solution3' s (1, 1, 1)
 > solution3' [] (a, m, i) = (a, m, i)
 > solution3' (x:xs) (a, m, i) = solution3' xs (a', m', i)
 >   where a' = (a * x) + i
@@ -493,10 +527,63 @@ Linear functions
 What can we do now? We can calculate (solution3' sequence) on any
 vector by way of how it acts on base vectors:
 
-    let f be solution3' sequence, then
-    f (a, m, i) = a * f (0, 0, 1)  + m * f (0, 1, 0) + i * f (0, 0, 1)
+Calling `solution3' s` $f_s$, we can show:
+
+$$f_s \left( \begin{array}a\\m\\i\end{array} \right) = 
+  a \cdot f_s \left( \begin{array}1\\0\\0\end{array} \right) + 
+  m \cdot f_s \left( \begin{array}0\\1\\0\end{array} \right) + 
+  i \cdot f_s \left( \begin{array}0\\0\\1\end{array} \right)$$
 
 The cool thing is, this *is* paralellizable.
+
+The $[]$ case
+===========
+
+$$f_{[]} \left( \begin{array}a\\m\\i\end{array} \right) = 
+  \left( \begin{array}a\\m\\i\end{array} \right)$$
+
+$f_{[]}$ is the identity function over 3-vectors, and so vector linearity implies $f_{[]}$'s linearity.
+
+The $(x:xs)$ case
+=================
+
+$$f_{x:xs} \left( \begin{array}a\\m\\i\end{array} \right) = 
+  f_{xs} \left( \begin{array}ax + i\\ax + i + m\\ i\end{array} \right)$$
+
+$$f_{x:xs} \left(
+  \left( \begin{array}a_1\\m_1\\i_1\end{array} \right) +
+  \alpha \left( \begin{array}a_2\\m_2\\i_2\end{array} \right)
+\right) =
+f_{x:xs} \left( \begin{array}
+  a_1 + \alpha a_2 \\
+  m_1 + \alpha m_2 \\
+  i_1 + \alpha i_2
+\end{array} \right) =$$
+
+(cont'd)
+========
+
+$$... = f_{xs} \left( \begin{array}
+  (a_1 + \alpha a_2)x + (i_1 + \alpha i_2) \\
+  ((a_1 + \alpha a_2)x + (i_1 + \alpha i_2)) + (m_1 + \alpha m_2) \\
+  i_1 + \alpha i_2
+\end{array} \right) =$$
+
+$$f_{xs} \left( \begin{array}
+  \left( \begin{array}
+    a_1 x + i_1 \\
+    a_1 x + i_1 + m_1 \\
+    i_1
+  \end{array} \right) +
+  \alpha \left( \begin{array}
+    a_2 x + i_2 \\
+    a_2 x + i_2 + m_2 \\
+    i_2
+  \end{array} \right)
+\end{array} \right)$$
+
+So $f_{x:xs}$ is linear if $f_{xs}$ is linear, and we finish by
+induction on $xs$.
 
 Linear algebra
 ==============
@@ -505,12 +592,16 @@ Now we'll need some code for working with vectors, bases and matrices.
 
 > type Vector t = (t, t, t)
 > type Matrix t = Vector (Vector t)
-> x, y, z :: (Num a) => Vector a
-> x = (1,0,0)
-> y = (0,1,0)
-> z = (0,0,1)
+> e1, e2, e3 :: (Num a) => Vector a
+> e1 = (1,0,0)
+> e2 = (0,1,0)
+> e3 = (0,0,1)
+
+Linear Algebra Operations
+=========================
+
 > matrix :: (Num t) => (Vector t -> Vector t) -> Matrix t
-> matrix f = (f x, f y, f z)
+> matrix f = (f e1, f e2, f e3)
 > (.+) :: (Num t) => Vector t -> Vector t -> Vector t
 > (a, b, c) .+ (d, e, f) = (a+d, b+e, c+f)
 > (.*) :: (Num t) => t -> Vector t -> Vector t
@@ -522,17 +613,80 @@ Applying
 ========
 
 > solution4 s = m
->   where (_, m, _) = mat .*. (1, 0, 1)
+>   where (_, m, _) = mat .*. (1, 1, 1)
 >         mat = matrix (solution3' s)
 
-But most of the work is done in calculating the matrix, before we even
-get to (1, 0, 1)!
+Notice that most of the work is done in calculating `mat`, before we
+even get to (1, 1, 1)! And we can parallelize it:
 
-And we can parallelize it:
+$$matrix \left( f_{x:xs} \right) = 
+  matrix \left( f_{xs} \right) \cdot matrix \left( f_{[x]} \right)$$
 
---## TODO: This line may be wrong. Do the math and correct
-it. Preferrably after sleep.
+and therefore:
 
-    let f = solution3', then
-    matrix (f (s1 ++ s2)) == (matrix f s2) * (matrix f s1)
+$$matrix \left( f_{concat(xs, ys)} \right) = 
+  matrix \left( f_{ys} \right) \cdot matrix \left( f_{xs} \right)$$
 
+In code
+=======
+
+> chop :: Int -> [a] -> [[a]]
+> chop n [] = []
+> chop n l = hs : chop n ts
+>   where (hs, ts) = splitAt n l
+>
+> solution5 s = m
+>   where (_, m, _) = foldr ($) (1, 1, 1) solution_pieces
+>         pieces = chop 10 s
+>         solution_pieces = map (.*.) matrices
+>         matrices = map (matrix . solution3') pieces
+
+And back to the problem
+=======================
+
+We only used properties of addition and multiplication that hold over
+any semiring - and specifically, over the semiring of real numbers
+with ($max$, $+$) as operators.
+
+So our solution is valid to our original problem, we only need to
+translate the structures:
+
+> newtype MaxPlus = MP Double deriving (Eq, Show)
+> instance Num MaxPlus where
+>   MP a + MP b = MP (max a b)
+>   MP a * MP b = MP (a + b)
+>   negate (MP a) = MP (negate a)
+>   abs (MP a) = MP (abs a)
+>   signum _ = error "no signum"
+>   fromInteger 0 = MP (-1/0) -- used by e1, e2, e3
+>   fromInteger 1 = MP 0.0
+>   fromInteger _ = error ("no general conversion from integer")
+
+Were our solutions correct?
+===========================
+
+> mpwrap :: ([MaxPlus] -> MaxPlus) -> [Double] -> Double
+> mpwrap solution = unpack . solution . map MP
+>   where unpack (MP x) = x
+> 
+> mptest = test . mpwrap
+> test2 = mptest solution2
+> test3 = mptest solution3
+> test4 = mptest solution4
+> test5 = mptest solution5
+
+Running
+=======
+
+Test2 through test4 were ok.
+
+Test5:
+
+    *Presentation> test5
+    +++ OK, passed 100 tests.
+    +++ OK, passed 100 tests.
+    +++ OK, passed 100 tests.
+    +++ OK, passed 100 tests.
+    *** Failed! Falsifiable (after 17 tests and 20 shrinks):     
+    [-32.0]
+    [0.0,20.0,31.0,3.0,23.0,14.0,0.0,3.0,11.0,46.0]
