@@ -18,6 +18,15 @@ So lets start with some imports, which you can ignore...
 > import Data.Ord
 > import Test.QuickCheck
 
+Hello, my name is Aur
+=====================
+
+- I ask many questions when I watch a presentation
+
+- I write my presentations as if I were in the crowd
+
+- Therefore, this will go much better if everyone asks many questions
+
 Hello, my name is Haskell
 =========================
 
@@ -458,9 +467,10 @@ All the tests accept a solution function as an argument, because we will want to
 >   where s' = map abs s
 > isAtLeastMax solution s = (not (null s))==>(solution s) >= maximum s
 > growsUnderConcatenation solution s1 s2 =
->   (solution (s1 ++ s2)) >= max (solution s1) (solution s2)
-> (=~=) :: Double -> Double -> Bool
-> a =~= b = (abs (b-a) < 0.00001)
+>   (solution (s1 ++ s2)) >=~ max (solution s1) (solution s2)
+> (=~=), (>=~) :: Double -> Double -> Bool
+> a =~= b = (abs (b-a) < 0.001)
+> a >=~ b = b - a < 0.001
 > 
 > test solution = do
 >   let q t = quickCheck (t solution)
@@ -588,24 +598,29 @@ induction on $xs$.
 Linear algebra
 ==============
 
-Now we'll need some code for working with vectors, bases and matrices.
+Now we'll need some code for working with vectors and matrices.
 
 > type Vector t = (t, t, t)
-> type Matrix t = Vector (Vector t)
+> 
 > e1, e2, e3 :: (Num a) => Vector a
 > e1 = (1,0,0)
 > e2 = (0,1,0)
 > e3 = (0,0,1)
-
-Linear Algebra Operations
-=========================
-
-> matrix :: (Num t) => (Vector t -> Vector t) -> Matrix t
-> matrix f = (f e1, f e2, f e3)
+> 
 > (.+) :: (Num t) => Vector t -> Vector t -> Vector t
 > (a, b, c) .+ (d, e, f) = (a+d, b+e, c+f)
+> 
 > (.*) :: (Num t) => t -> Vector t -> Vector t
 > a .* (b, c, d) = (a*b, a*c, a*d)
+
+(cont'd)
+========
+
+> type Matrix t = Vector (Vector t)
+> 
+> matrix :: (Num t) => (Vector t -> Vector t) -> Matrix t
+> matrix f = (f e1, f e2, f e3)
+> 
 > (.*.) :: (Num t) => Matrix t -> Vector t -> Vector t
 > (u, v, w) .*. (a, b, c) = (a .* u) .+ (b .* v) .+ (c .* w)
 
@@ -630,16 +645,16 @@ $$matrix \left( f_{concat(xs, ys)} \right) =
 In code
 =======
 
+> solution5 s = m
+>   where (_, m, _) = foldr ($) (1, 1, 1) solution_pieces
+>         pieces = chop 10 s
+>         solution_pieces = map (.*.) (reverse matrices)
+>         matrices = map (matrix . solution3') pieces
+>
 > chop :: Int -> [a] -> [[a]]
 > chop n [] = []
 > chop n l = hs : chop n ts
 >   where (hs, ts) = splitAt n l
->
-> solution5 s = m
->   where (_, m, _) = foldr ($) (1, 1, 1) solution_pieces
->         pieces = chop 10 s
->         solution_pieces = map (.*.) matrices
->         matrices = map (matrix . solution3') pieces
 
 And back to the problem
 =======================
@@ -649,7 +664,10 @@ any semiring - and specifically, over the semiring of real numbers
 with ($max$, $+$) as operators.
 
 So our solution is valid to our original problem, we only need to
-translate the structures:
+translate the structures
+
+Translating
+===========
 
 > newtype MaxPlus = MP Double deriving (Eq, Show)
 > instance Num MaxPlus where
@@ -675,12 +693,10 @@ Were our solutions correct?
 > test4 = mptest solution4
 > test5 = mptest solution5
 
-Running
-=======
+Running...
+==========
 
-Test2 through test4 were ok.
-
-Test5:
+`test2` through `test4` gave `+++ OK, passed 100 tests.`
 
     *Presentation> test5
     +++ OK, passed 100 tests.
@@ -690,3 +706,32 @@ Test5:
     *** Failed! Falsifiable (after 17 tests and 20 shrinks):     
     [-32.0]
     [0.0,20.0,31.0,3.0,23.0,14.0,0.0,3.0,11.0,46.0]
+
+Debugging
+=========
+
+    *Presentation> (mpwrap solution5) [0.0,20.0,31.0,3.0,23.0,
+                                       14.0,0.0,3.0,11.0,46.0]
+    151.0
+    *Presentation> (mpwrap solution5) [-32.0, 0.0,20.0,31.0,3.0,
+                                       23.0,14.0,0.0,3.0,11.0,46.0]
+    119.0
+
+This occurs right when chopping kicks in. `chop` is not the culprit
+(tested quickly with `quickCheck (\l-> concat (chop 10 l) == l)`).
+
+Looking at the relevant area of the code... Ah! I forgot to reverse
+the matrixes.
+
+Running again
+=============
+
+    *Presentation> test5
+    +++ OK, passed 100 tests.
+    +++ OK, passed 100 tests.
+    +++ OK, passed 100 tests.
+    +++ OK, passed 100 tests.
+    +++ OK, passed 100 tests.
+
+Win!
+
