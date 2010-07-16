@@ -460,16 +460,16 @@ Some tests
 
 All the tests accept a solution function as an argument, because we will want to test our different solutions.
 
-> isCorrectForOneItem solution x = (solution [x]) == max 0 x
-> isZeroForNegativeSequence solution s = (solution s') =~= 0
+> isCorrectForOneItem solution x = solution [x] == max 0 x
+> isZeroForNegativeSequence solution s = solution s' =~= 0
 >   where s' = map (negate . abs) s
-> isSumForPositiveSequence solution s = (solution s') =~= sum s'
+> isSumForPositiveSequence solution s = solution s' =~= sum s'
 >   where s' = map abs s
-> isAtLeastMax solution s = (not (null s))==>(solution s) >= maximum s
+> isAtLeastMax solution s = not (null s) ==> solution s >= maximum s
 > growsUnderConcatenation solution s1 s2 =
->   (solution (s1 ++ s2)) >=~ max (solution s1) (solution s2)
+>   solution (s1 ++ s2) >=~ max (solution s1) (solution s2)
 > (=~=), (>=~) :: Double -> Double -> Bool
-> a =~= b = (abs (b-a) < 0.001)
+> a =~= b = abs (b-a) < 0.001
 > a >=~ b = b - a < 0.001
 > 
 > test solution = do
@@ -678,7 +678,7 @@ Translating
 >   signum _ = error "no signum"
 >   fromInteger 0 = MP (-1/0) -- used by e1, e2, e3
 >   fromInteger 1 = MP 0.0
->   fromInteger _ = error ("no general conversion from integer")
+>   fromInteger _ = error "no general conversion from integer"
 
 Were our solutions correct?
 ===========================
