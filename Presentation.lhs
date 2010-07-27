@@ -85,6 +85,12 @@ Functions, Lists, Pattern Matching
 
 undefined :: a
 
+Composition
+===========
+
+> second :: [a] -> a
+> second = head . tail
+
 Indentation, Currying, ...
 ==========================
 
@@ -153,6 +159,80 @@ Writing Type Classes
 >     x >= y = not (x < y)
 
 (From <http://code.haskell.org/~thielema/htam/src/Number/PeanoNumber.hs>)
+
+Properties of Haskell
+=====================
+
+* Pure
+
+* Type inferring
+
+* Lazy
+
+Pure
+====
+
+`fx` does exactly the same thing as `f x`
+
+Therefore, no side-effects.
+
+Helps debugging and reasoning about code.
+
+Can be seen as a "permissions" system for the code.
+
+Purity rocks
+============
+
+What does `f :: a -> a` do?
+
+What does `g :: [a] -> a` do?
+
+What does `h :: (a, b) -> a` do?
+
+What does `i :: (Num a) => a -> a` do?
+
+What does `j :: IO ()` do?
+
+Type Inference
+==============
+
+C#:
+
+    Int f(Map<String, Map<String, Int>> map, String k1, String k2) {
+        return map[k1][k2];
+    }
+
+Haskell:
+
+    f map k1 k2 = map ! k1 ! k2
+
+And we even get generality for free!
+
+Lazyness
+========
+
+Evaluation happens on a need-to-know basis.
+
+This is efficient:
+
+> reverseLineWords :: String -> String
+> reverseLineWords = unlines . map unwords . map (map reverse) . 
+>                       map words . lines
+> 
+> reverseStdInLineWords :: IO ()
+> reverseStdInLineWords = do
+>     text <- getContents
+>     putStr (reverseLineWords text)
+
+...
+===
+
+This is efficient:
+
+> nthMin :: (Ord a) => Int -> [a] -> a
+> nthMin n = head . drop n . sort
+
+Laziness opens the door to space leaks.
 
 Let's play a game
 =================
@@ -735,3 +815,102 @@ Running again
 
 Win!
 
+Real World Use
+==============
+
+* Haskell is not C++
+
+* It is used mainly in academy, for both language research and
+algorithmic reseach
+
+* There is some Industry use and some Open Source use
+
+Haskell in Open Source
+======================
+
+The XMonad tiling window manager is written in Haskell. I use it
+(since long before I had an interest in the language). It is ~1000
+lines of Haskell. It does the job great, is very simple, very
+customizable and I've never encountered a bug.
+
+Haskell has been used a lot for compiler construction - and not only
+of the dogfood variety. For example, the PUGS perl6 compiler (which
+used to be the only interesting one for a long while, but has fallen
+to inactivity) is written in Haskell.
+
+Among other notable Haskell open source projects are `frag`, a Quake
+clone, and `darcs`, a distributed source control system.
+
+Haskell in Industry
+===================
+
+*Galois Inc.* are a company that provides software with correctness
+proofs. They do private and U.S. government work. The most interesting
+project I've seen come out of their doors is the *Cryptol* programming
+language:
+
+"Cryptol is a language for writing specifications for cryptographic
+algorithms. It is also a tool set for producing high-assurance,
+efficient implementations in VHDL, C, and Haskell. The Cryptol tools
+include the ability to equivalence check the reference specification
+against an implementation, whether or not it was compiled from the
+specifications."
+
+...
+===
+
+*Bluespec, Inc* provide a language for hardware design based on
+functional programming ideas. Their entire toolset is written in Haskell.
+
+Founded 2003, it counts among its clients Panasonic, Fujitsu and Mercury.
+
+...
+===
+
+Many Banks and High Frequency Trading companies use Haskell for trading
+code. Among them: *Deutsche Bank Equity Proprietary Trading*,
+*Starling Software*, *Tsuru Capital*.
+
+Of course, there are a few more users, but they are less interesting.
+
+Other functional languages
+==========================
+
+There are other languages sharing many of Haskell's properties. Among
+them are found various incarnations of ML (Notably OCaml), Erlang,
+Clojure, Scala, Coq, ...
+
+The reason I have chosen to learn Haskell (and talk about it here) is
+that it is so strict in its adherence to purity that it forces its
+users to find the natural pure solution to a problem instead of
+relying on familiar non-pure solutions, which is both very educational
+and gives birth to techniques like *Functional Reactive Programming*.
+
+Functional Reactive Programming
+===============================
+
+    simpleGun :: Position2 -> SimpleGun
+    simpleGun (Point2 x0 y0) = proc gi -> do
+        (Point2 xd _) <- ptrPos -< gi
+        rec
+            -- Controller
+            let ad = 10 * (xd - x) - 5 * v
+            -- Physics
+            v <- integral -< clampAcc v ad
+            x <- (x0+) ^<< integral -< v
+            fire <- leftButtonPress -< gi
+        returnA -< SimpleGunState {
+            sgsPos = (Point2 x y0),
+            sgsVel = (vector2 v 0),
+            sgsFired = fire
+        }
+
+Questions?
+==========
+
+This is the end.
+
+.
+=
+
+Thank you.
