@@ -82,30 +82,100 @@ Functions, Lists, Pattern Matching
 > head' :: [a] -> a
 > head' (x:_) = x
 > head' [] = undefined
-
-undefined :: a
+> -- undefined :: a
 
 Composition
 ===========
 
 > second :: [a] -> a
 > second = head . tail
+> -- tail :: [a] -> [a]
 
 Indentation, Currying, ...
 ==========================
 
-... Higher-Order Functions, Lazyness, Type Inference
-----------------------------------------------------
+... Higher-Order Functions, Operators, Lazyness, Type Inference
+----------------------------------------------------------------
 
 > fib n = fib' !! n
->   where fib' = (0 : 1 : zipWith (+) fib' (tail fib'))
+>   where fib' =  (0 : 1 : zipWith (+) fib' (tail fib'))
+> -- (!!) :: [a] -> Int -> a
+> -- zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
 
-(!!) :: [a] -> Int -> a
+Laziness example
+================
 
-zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+Lets say we ask Haskell to print the first five items of fib'.
+
+fib' = `(0 : 1 : zipWith (+) fib' (tail fib'))`
+
+(cont'd)
+========
+
+fib' = (f0 : f0')
+
+f0 = 0
+
+f0' = `1 : zipWith (+) fib' (tail fib')`
+
+(cont'd)
+========
+
+fib' = (f0 : f0')
+
+f0 = 0
+
+f0' = (f1 : f1')
+
+f1 = 1
+
+f1' = `zipWith (+) fib' (tail fib')`
+
+(cont'd)
+========
+
+fib' = (f0 : f0')
+
+f0 = 0
+
+f1 = 1
+
+(x:x') = `fib'` = (f0 : f0')
+
+(y:y') = `tail fib'` = (f1 : f1')
+
+f2 = `x + y` = f0 + f1 = 0 + 1 = 1
+
+f2' = `zipWith (+) f0' f1'`
+
+(cont'd)
+========
+
+(x_:x'') = f0' = (f1 : f1')
+
+(y_:y'') = f1' = (f2 : f2')
+
+f3 = `x_ + y_` = f1 + f2 = 1 + 1 = 2
+
+f3' = `zipWith (+) f1' f2'`
+
+(cont'd)
+========
+
+(x__:x''') = f1' = (f2 : f2')
+
+(y__:y''') = f2' = (f3 : f3')
+
+f4 = `x__ + y__` = f2 + f3 = 1 + 2 = 3
+
+f4' = `zipWith (+) f2' f3'`
 
 Algebraic Data Types
 ====================
+
+> data Exception = Exception Int String
+> line (Exception l _) = l
+> message (Exception _ m) = m
 
 > data Bool' = False' | True'
 >
@@ -113,26 +183,30 @@ Algebraic Data Types
 > not' False' = True'
 > not' True' = False'
 
-> data List a = Empty | a :. List a
+> data List a = Empty | a :.: List a
 > 
 > tail' :: List a -> List a
-> tail' (_ :. xs) = xs
+> tail' (_ :.: xs) = xs
 > tail' Empty = undefined
 
 Type Classes
 ============
 
 > maxSucc :: (Ord a) => [a] -> a
-> maxSucc a = maximum (List.delete (maximum a) a)
+> maxSucc xs = maximum (List.delete (maximum xs) xs)
+> -- maximum :: (Ord a) => [a] -> a
+> -- List.delete :: a -> [a] -> [a]
 
 Writing Type Classes
 ====================
 
 > data Peano = Zero
 >            | Succ Peano
->    deriving (Show, Read, Eq)
+>     deriving (Show, Read, Eq)
 > 
 > instance Ord Peano where
+>     -- compare :: Peano -> Peano -> Ordering
+>     -- data Ordering = LT | EQ | GT deriving Eq
 >     compare (Succ x) (Succ y) = compare x y
 >     compare Zero     (Succ _) = LT
 >     compare (Succ _) Zero     = GT
@@ -141,8 +215,8 @@ Writing Type Classes
 >     min (Succ x) (Succ y) = Succ (min x y)
 >     min _        _        = Zero
 
-...
-===
+(cont'd)
+========
 
 >     max (Succ x) (Succ y) = Succ (max x y)
 >     max Zero     y        = y
@@ -172,7 +246,7 @@ Properties of Haskell
 Pure
 ====
 
-`fx` does exactly the same thing as `f x`
+`f x` does exactly the same thing as `f x`
 
 Therefore, no side-effects.
 
@@ -208,271 +282,35 @@ Haskell:
 
 And we even get generality for free!
 
-Lazyness
-========
-
-Evaluation happens on a need-to-know basis.
+Lazyness lets us focus on what code does
+========================================
 
 This is efficient:
 
 > reverseLineWords :: String -> String
 > reverseLineWords = unlines . map unwords . map (map reverse) . 
 >                       map words . lines
+> -- lines, words :: String -> [String]
+> -- map :: (a -> b) -> [a] -> [b]; reverse :: [a] -> [a]
+> -- unlines, unwords :: [String] -> String
 > 
 > reverseStdInLineWords :: IO ()
 > reverseStdInLineWords = do
 >     text <- getContents
 >     putStr (reverseLineWords text)
+> -- getContents :: IO String
 
-...
-===
+(cont'd)
+========
 
 This is efficient:
 
 > nthMin :: (Ord a) => Int -> [a] -> a
 > nthMin n = head . drop n . sort
+> -- drop :: Int -> [a] -> [a]
+> -- sort :: (Ord a) => [a] -> [a]
 
 Laziness opens the door to space leaks.
-
-Let's play a game
-=================
-
-We all know Nim.
-
-- n stacks of matches on a table
-
-- Each player, in his turn, must remove one or more matches from a
-single stack
-
-- If a player cannot, he loses
-
-Data Structure
-==============
-
-> data Player = Player String (Nim -> IO Move)
-> instance Show Player where show (Player name _) = name
-> getMove (Player _ f) = f
-> 
-> data Score = Lose | NotFinished | Win deriving (Eq, Ord)
-> 
-> data Nim = Nim [Matches]
->     deriving Show
-> newtype Matches = Matches Int deriving (Ord, Eq, Enum, Num)
-> instance Show Matches where
->   show (Matches k) = show k ++ " match(es)"
-> 
-> data Move = Move Int Matches
-> instance Show Move where
->   show (Move i (Matches k)) = "Remove " ++ show k ++
->                               " from stack " ++ show (i + 1)
-
-Rules of the game
-=================
-
-> apply :: Move -> Nim -> Nim
-> apply (Move i k) (Nim stacks) | legal = Nim (h ++ [s-k] ++ t)
->   where (h, (s: t)) = splitAt i stacks
->         legal = k > 0 && s >= k
-> apply _ _ = undefined
-
-> score :: Nim -> Score
-> score (Nim stacks) | all (== 0) stacks = Lose
-> score _ = NotFinished
-
-Main loop
-=========
-
-> playNim :: Player -> Player -> Nim -> IO Player
-> playNim p1 p2 nim = do
->     putStrLn (show p1 ++ "'s turn")
->     m <- getMove p1 nim
->     putStrLn (show p1 ++ "'s move is: " ++ show m)
->     let nim' = apply m nim
->     let result = if score nim' == Lose 
->                  then return p2 
->                  else playNim p2 p1 nim'
->     result
-
-return :: (Monad m) => a -> m a
-instance Monad IO
-
-Human player
-============
-
-> humanMove :: Nim -> IO Move
-> humanMove nim = do
->     putStrLn (showNim nim)
->     putStrLn "Choose a stack:"
->     stack <- getLine
->     putStrLn "Choose amount:"
->     amount <- getLine
->     return (Move (read stack - 1) (Matches (read amount)))
-> 
-> showNim (Nim stacks) =
->   unlines [show i ++": "++ show k | (i, k) <- zip [1..] stacks]
-> 
-> human name = Player name humanMove
-> humanVsHumanNim = playNim (human "Aur") (human "Heru") 
-
-Runtime bugs I had
-==================
-
-When I first ran the code, I found the following bugs:
-
-- Confused i and k in Move's show
-
-- Confused i and k in apply
-
-(i and k were both Ints). So I added the newtype Matches.
-
-- The condition for apply was s > k and not s >= k
-
-- I derived Read for Matches, so it tried to parse from user input a
-string like "Matches 1" (solution: read as Int and construct Matches
-from it myself)
-
-And then it worked!
-===================
-
-- How many bugs would you have had for a program this size that you
-run for the first time in C? In Python?
-
-- I usually have a very high bug count for a programmer
-
-- All of these bugs were immediately apparent. No edge case chasing
-
-- I never had a bug again in this area of the code
-
-Computing an optimal move
-=========================
-
-> computerMove nim = return (fst (bestMove nim))
->
-> bestMove nim = maximumBy (comparing snd) (evaluateAllMoves nim)
-> evaluateAllMoves nim = map evaluate (legalMoves nim)
->   where evaluate m = (m, score' (apply m nim))
->
-> score' nim = case score nim of 
->   Lose -> Lose
->   _ -> negateScore (snd (bestMove nim))
-> negateScore Win = Lose
-> negateScore Lose = Win
-> 
-> legalMoves :: Nim -> [Move]
-> legalMoves (Nim stacks) = 
->    [Move i k | i <- [0..length stacks - 1],
->                k <- [1..stacks !! i]]
-
-Let's play!
-===========
-
-> humanVsComputerNim = playNim (human "Aur") 
->                              (Player "Oleg" computerMove)
-
-First run
-=========
-
-Seemed to work! I lost every time I was the losing player or made a
-mistake
-
-Exploring the game
-==================
-
-All this IO is very uncomfortable.
-
-First, lets write a pure solver.
-
-> data PurePlayer = PurePlayer String (Nim -> Move)
-> instance Show PurePlayer where show (PurePlayer name _) = name
-> pureGetMove (PurePlayer _ f) = f
-
-Pure Nim
-========
-
-> pureComputerMove nim = fst (bestMove nim)
-> 
-> pureNim _ p2 nim | score nim == Lose = p2
-> pureNim p1 p2 nim =
->   if score nim' == Lose 
->   then p2 
->   else pureNim p2 p1 nim'
->     where m = pureGetMove p1 nim
->           nim' = apply m nim
->
-> computer name = PurePlayer name pureComputerMove
-> computerNim = pureNim (computer "A") (computer "B")
-
-And lets explore!
-=================
-
-> nim2Table n =
->   [[computerNim (Nim [i, j]) | j <- range] | i <- range]
->     where range = [0..n]
-
-nim2Table 4 gives us:
-
-    [[B,B,A,A,A],
-     [B,A,A,A,A],
-     [A,A,B,A,A],
-     [A,A,A,B,A],
-     [A,A,A,A,B]]
-
-But it is so slow...
-====================
-
-nim2Table 7 takes 3.42 seconds on my old laptop, but nim2Table 8 takes
-30 seconds, and it gets worse. Lets try to optimize a bit.
-
-We will try to memoize results of bestMove.
-
-To keep the code simple, we will only tackle nim2.
-
-Memoizing
-=========
-
-> fastBestMove' (Nim [Matches a, Matches b]) = bests !! a !! b
-> fastBestMove' nim = fastBestMove nim
-> 
-> bests = [[fastBestMove (Nim [a, b]) | b <- [0..]] | a <- [0..]]
-> 
-> fastBestMove nim = maximumBy (comparing snd)
->                              (fastEvaluateAllMoves nim)
-> 
-> fastEvaluateAllMoves nim = map evaluate (legalMoves nim)
->   where evaluate m = (m, fastScore' (apply m nim))
-> 
-> fastScore' nim = case score nim of 
->   Lose -> Lose
->   _ -> negateScore (snd (fastBestMove' nim))
-
-And let's play!
-===============
-
-> fastComputerMove nim = fst (fastBestMove' nim)
-> fastComputer name = PurePlayer name fastComputerMove
-> 
-> fastNim = pureNim (fastComputer "A") (fastComputer "B")
-> 
-> fastNim2Table n =
->   [[fastNim (Nim [i, j]) | j <- range] | i <- range]
->     where range = [0..n]
-
-*Success!* fastNim2Table 20 executes within the blink of an eye
-(profiler reports 0.04 seconds)
-
-Parallelization
-===============
-
-What would it take to parallelize this?
-
-Nothing! Just setting a compiler flag!
-
-We only know how to do this for functional languages like Haskell.
-
-Any Questions Up Until Now?
-===========================
-
-Don't worry, we are not done yet...
 
 Parallelization, Abstraction, Mathematics
 =========================================
@@ -538,20 +376,25 @@ The types of data to generate, of course, are inferred from the code.
 Some tests
 ==========
 
-All the tests accept a solution function as an argument, because we will want to test our different solutions.
-
 > isCorrectForOneItem solution x = solution [x] == max 0 x
 > isZeroForNegativeSequence solution s = solution s' =~= 0
 >   where s' = map (negate . abs) s
 > isSumForPositiveSequence solution s = solution s' =~= sum s'
 >   where s' = map abs s
-> isAtLeastMax solution s = not (null s) ==> solution s >= maximum s
+> isAtLeastMax solution s = 
+>   not (null s) ==> solution s >= maximum s
 > growsUnderConcatenation solution s1 s2 =
 >   solution (s1 ++ s2) >=~ max (solution s1) (solution s2)
 > (=~=), (>=~) :: Double -> Double -> Bool
 > a =~= b = abs (b-a) < 0.001
 > a >=~ b = b - a < 0.001
-> 
+
+Running the tests
+=================
+
+All the tests accepted a solution function as an argument, because we
+will want to test our different solutions.
+
 > test solution = do
 >   let q t = quickCheck (t solution)
 >   q isCorrectForOneItem
@@ -559,10 +402,7 @@ All the tests accept a solution function as an argument, because we will want to
 >   q isZeroForNegativeSequence
 >   q isAtLeastMax
 >   q growsUnderConcatenation
-
-Running the tests
-=================
-
+> 
 > test1 = test solution1
 
 They all succeed on first try!
@@ -856,16 +696,16 @@ include the ability to equivalence check the reference specification
 against an implementation, whether or not it was compiled from the
 specifications."
 
-...
-===
+(cont'd)
+========
 
 *Bluespec, Inc* provide a language for hardware design based on
 functional programming ideas. Their entire toolset is written in Haskell.
 
 Founded 2003, it counts among its clients Panasonic, Fujitsu and Mercury.
 
-...
-===
+(cont'd)
+========
 
 Many Banks and High Frequency Trading companies use Haskell for trading
 code. Among them: *Deutsche Bank Equity Proprietary Trading*,
@@ -904,6 +744,246 @@ Functional Reactive Programming
             sgsVel = (vector2 v 0),
             sgsFired = fire
         }
+
+Any Questions Up Until Now?
+===========================
+
+Don't worry, we are not done yet...
+
+Let's play a game
+=================
+
+We all know Nim.
+
+- n stacks of matches on a table
+
+- Each player, in his turn, must remove one or more matches from a
+single stack
+
+- If a player cannot, he loses
+
+Data Structure
+==============
+
+> data Player = Player String (Nim -> IO Move)
+> instance Show Player where show (Player name _) = name
+> getMove (Player _ f) = f
+> 
+> data Score = Lose | NotFinished | Win deriving (Eq, Ord)
+> 
+> data Nim = Nim [Matches]
+>     deriving Show
+> newtype Matches = Matches Int deriving (Ord, Eq, Enum, Num)
+> instance Show Matches where
+>   show (Matches k) = show k ++ " match(es)"
+> 
+> data Move = Move Int Matches
+> instance Show Move where
+>   show (Move i (Matches k)) = "Remove " ++ show k ++
+>                               " from stack " ++ show (i + 1)
+
+Rules of the game
+=================
+
+> apply :: Move -> Nim -> Nim
+> apply (Move i k) (Nim stacks) | legal = Nim (h ++ [s-k] ++ t)
+>   where (h, (s: t)) = splitAt i stacks
+>         legal = k > 0 && s >= k
+> apply _ _ = undefined
+
+> score :: Nim -> Score
+> score (Nim stacks) | all (== 0) stacks = Lose
+> score _ = NotFinished
+
+Main loop
+=========
+
+> playNim :: Player -> Player -> Nim -> IO Player
+> playNim p1 p2 nim = do
+>     putStrLn (show p1 ++ "'s turn")
+>     m <- getMove p1 nim
+>     putStrLn (show p1 ++ "'s move is: " ++ show m)
+>     let nim' = apply m nim
+>     let result = if score nim' == Lose 
+>                  then return p2 
+>                  else playNim p2 p1 nim'
+>     result
+
+return :: (Monad m) => a -> m a
+instance Monad IO
+
+Human player
+============
+
+> humanMove :: Nim -> IO Move
+> humanMove nim = do
+>     putStrLn (showNim nim)
+>     putStrLn "Choose a stack:"
+>     stack <- getLine
+>     putStrLn "Choose amount:"
+>     amount <- getLine
+>     return (Move (read stack - 1) (Matches (read amount)))
+> 
+> showNim (Nim stacks) =
+>   unlines [show i ++": "++ show k | (i, k) <- zip [1..] stacks]
+> 
+> human name = Player name humanMove
+> humanVsHumanNim = playNim (human "Aur") (human "Heru") 
+
+Runtime bugs I had
+==================
+
+When I first ran the code, I found the following bugs:
+
+- Confused i and k in Move's show
+
+- Confused i and k in apply
+
+(i and k were both Ints). So I added the newtype Matches.
+
+- The condition for apply was s > k and not s >= k
+
+- I derived Read for Matches, so it tried to parse from user input a
+string like "Matches 1" (solution: read as Int and construct Matches
+from it myself)
+
+And then it worked!
+===================
+
+- How many bugs would you have had for a program this size that you
+run for the first time in C? In Python?
+
+- I usually have a very high bug count for a programmer
+
+- All of these bugs were immediately apparent. No edge case chasing
+
+- I never had a bug again in this area of the code
+
+Computing an optimal move
+=========================
+
+> computerMove nim = return (fst (bestMove nim))
+>
+> bestMove nim = maximumBy (comparing snd) (evaluateAllMoves nim)
+> evaluateAllMoves nim = map evaluate (legalMoves nim)
+>   where evaluate m = (m, score' (apply m nim))
+>
+> score' nim = case score nim of 
+>   Lose -> Lose
+>   _ -> negateScore (snd (bestMove nim))
+> negateScore Win = Lose
+> negateScore Lose = Win
+> 
+> legalMoves :: Nim -> [Move]
+> legalMoves (Nim stacks) = 
+>    [Move i k | i <- [0..length stacks - 1],
+>                k <- [1..stacks !! i]]
+
+Let's play!
+===========
+
+> humanVsComputerNim = playNim (human "Aur") 
+>                              (Player "Oleg" computerMove)
+
+First run
+=========
+
+Seemed to work! I lost every time I was the losing player or made a
+mistake
+
+Exploring the game
+==================
+
+All this IO is very uncomfortable.
+
+First, lets write a pure solver.
+
+> data PurePlayer = PurePlayer String (Nim -> Move)
+> instance Show PurePlayer where show (PurePlayer name _) = name
+> pureGetMove (PurePlayer _ f) = f
+
+Pure Nim
+========
+
+> pureComputerMove nim = fst (bestMove nim)
+> 
+> pureNim _ p2 nim | score nim == Lose = p2
+> pureNim p1 p2 nim =
+>   if score nim' == Lose 
+>   then p2 
+>   else pureNim p2 p1 nim'
+>     where m = pureGetMove p1 nim
+>           nim' = apply m nim
+>
+> computer name = PurePlayer name pureComputerMove
+> computerNim = pureNim (computer "A") (computer "B")
+
+And lets explore!
+=================
+
+> nim2Table n =
+>   [[computerNim (Nim [i, j]) | j <- range] | i <- range]
+>     where range = [0..n]
+
+nim2Table 4 gives us:
+
+    [[B,B,A,A,A],
+     [B,A,A,A,A],
+     [A,A,B,A,A],
+     [A,A,A,B,A],
+     [A,A,A,A,B]]
+
+But it is so slow...
+====================
+
+nim2Table 7 takes 3.42 seconds on my old laptop, but nim2Table 8 takes
+30 seconds, and it gets worse. Lets try to optimize a bit.
+
+We will try to memoize results of bestMove.
+
+To keep the code simple, we will only tackle nim2.
+
+Memoizing
+=========
+
+> fastBestMove' (Nim [Matches a, Matches b]) = bests !! a !! b
+> fastBestMove' nim = fastBestMove nim
+> 
+> bests = [[fastBestMove (Nim [a, b]) | b <- [0..]] | a <- [0..]]
+> 
+> fastBestMove nim = maximumBy (comparing snd)
+>                              (fastEvaluateAllMoves nim)
+> 
+> fastEvaluateAllMoves nim = map evaluate (legalMoves nim)
+>   where evaluate m = (m, fastScore' (apply m nim))
+> 
+> fastScore' nim = case score nim of 
+>   Lose -> Lose
+>   _ -> negateScore (snd (fastBestMove' nim))
+
+And let's play!
+===============
+
+> fastComputerMove nim = fst (fastBestMove' nim)
+> fastComputer name = PurePlayer name fastComputerMove
+> 
+> fastNim = pureNim (fastComputer "A") (fastComputer "B")
+> 
+> fastNim2Table n =
+>   [[fastNim (Nim [i, j]) | j <- range] | i <- range]
+>     where range = [0..n]
+
+*Success!* fastNim2Table 20 executes within the blink of an eye
+(profiler reports 0.04 seconds)
+
+Parallelization
+===============
+
+What would it take to parallelize this?
+
+Nothing! Just setting a compiler flag!
+
+We only know how to do this for functional languages like Haskell.
 
 Questions?
 ==========
