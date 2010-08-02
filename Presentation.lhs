@@ -80,7 +80,7 @@ Functions, Lists, Pattern Matching
 ==================================
 
 > head' :: [a] -> a
-> head' (x:_) = x
+> head' (x : _) = x
 > head' [] = undefined
 > -- undefined :: a
 
@@ -90,6 +90,23 @@ Composition
 > second :: [a] -> a
 > second = head . tail
 > -- tail :: [a] -> [a]
+
+Operators
+=========
+
+> (=~) :: Double -> Double -> Bool
+> a =~ b = abs (b - a) / sqrt (a*a + b*b) < 0.01
+
+> half :: Double -> Double
+> half = (/2.0)
+
+> xor :: Bool -> Bool -> Bool
+> xor True True = False
+> xor False False = False
+> xor _ _ = True
+
+> exactlyOne42 :: Int -> Int -> Bool
+> exactlyOne42 a b = (a == 42) `xor` (b == 42)
 
 Indentation, Currying, ...
 ==========================
@@ -140,9 +157,9 @@ f0 = 0
 
 f1 = 1
 
-(x:x') = `fib'` = (f0 : f0')
+(x : x') = `fib'` = (f0 : f0')
 
-(y:y') = `tail fib'` = (f1 : f1')
+(y : y') = `tail fib'` = (f1 : f1')
 
 f2 = `x + y` = f0 + f1 = 0 + 1 = 1
 
@@ -151,9 +168,9 @@ f2' = `zipWith (+) f0' f1'`
 (cont'd)
 ========
 
-(x_:x'') = f0' = (f1 : f1')
+(x_ : x'') = f0' = (f1 : f1')
 
-(y_:y'') = f1' = (f2 : f2')
+(y_ : y'') = f1' = (f2 : f2')
 
 f3 = `x_ + y_` = f1 + f2 = 1 + 1 = 2
 
@@ -162,9 +179,9 @@ f3' = `zipWith (+) f1' f2'`
 (cont'd)
 ========
 
-(x__:x''') = f1' = (f2 : f2')
+(x__ : x''') = f1' = (f2 : f2')
 
-(y__:y''') = f2' = (f3 : f3')
+(y__ : y''') = f2' = (f3 : f3')
 
 f4 = `x__ + y__` = f2 + f3 = 1 + 2 = 3
 
@@ -173,9 +190,9 @@ f4' = `zipWith (+) f2' f3'`
 Algebraic Data Types
 ====================
 
-> data Exception = Exception Int String
-> line (Exception l _) = l
-> message (Exception _ m) = m
+> data Labeled a = Label String a
+> label (Label l _) = l
+> value (Label _ v) = v
 
 > data Bool' = False' | True'
 >
@@ -183,10 +200,10 @@ Algebraic Data Types
 > not' False' = True'
 > not' True' = False'
 
-> data List a = Empty | a :.: List a
+> data List a = Empty | a ::: List a
 > 
 > tail' :: List a -> List a
-> tail' (_ :.: xs) = xs
+> tail' (_ ::: xs) = xs
 > tail' Empty = undefined
 
 Type Classes
@@ -282,22 +299,22 @@ Haskell:
 
 And we even get generality for free!
 
-Lazyness lets us focus on what code does
-========================================
+Lazyness
+========
 
 This is efficient:
 
-> reverseLineWords :: String -> String
-> reverseLineWords = unlines . map unwords . map (map reverse) . 
->                       map words . lines
-> -- lines, words :: String -> [String]
-> -- map :: (a -> b) -> [a] -> [b]; reverse :: [a] -> [a]
-> -- unlines, unwords :: [String] -> String
+> addLineNumbers :: String -> String
+> addLineNumbers = unlines . zipWith (++) numbers . lines
+>   where numbers = [show i ++ ":" | i <- [1,2..]]
+> -- lines :: String -> [String]
+> -- map :: (a -> b) -> [a] -> [b]
+> -- unlines :: [String] -> String
 > 
-> reverseStdInLineWords :: IO ()
-> reverseStdInLineWords = do
+> addLineNumbersMain :: IO ()
+> addLineNumbersMain = do
 >     text <- getContents
->     putStr (reverseLineWords text)
+>     putStr (addLineNumbers text)
 > -- getContents :: IO String
 
 (cont'd)
@@ -309,6 +326,9 @@ This is efficient:
 > nthMin n = head . drop n . sort
 > -- drop :: Int -> [a] -> [a]
 > -- sort :: (Ord a) => [a] -> [a]
+
+Cons of lazyness
+================
 
 Laziness opens the door to space leaks.
 
@@ -348,6 +368,8 @@ In Haskell:
 > solution1' (x:xs) (a, m) = solution1' xs (a', m')
 >   where a' = max (a + x) 0
 >         m' = max a' m
+> -- snd :: (a, b) -> b
+> -- max :: (Ord a) => a -> a -> a
 
 Running it
 ==========
@@ -381,13 +403,16 @@ Some tests
 >   where s' = map (negate . abs) s
 > isSumForPositiveSequence solution s = solution s' =~= sum s'
 >   where s' = map abs s
-> isAtLeastMax solution s = 
->   not (null s) ==> solution s >= maximum s
+> isAtLeastMax solution s = s /= [] ==> solution s >= maximum s
 > growsUnderConcatenation solution s1 s2 =
 >   solution (s1 ++ s2) >=~ max (solution s1) (solution s2)
+> 
 > (=~=), (>=~) :: Double -> Double -> Bool
 > a =~= b = abs (b-a) < 0.001
 > a >=~ b = b - a < 0.001
+>
+> -- abs, negate :: (Num a) => a -> a
+> -- sum :: (Num a) => [a] -> a
 
 Running the tests
 =================
@@ -566,15 +591,18 @@ In code
 =======
 
 > solution5 s = m
->   where (_, m, _) = foldr ($) (1, 1, 1) solution_pieces
+>   where (_, m, _) = apply (reverse matrices) (1, 1, 1)
+>         apply [] x0 = x0
+>         apply (mat : rest) x0 = mat .*. apply rest x0
 >         pieces = chop 10 s
->         solution_pieces = map (.*.) (reverse matrices)
 >         matrices = map (matrix . solution3') pieces
->
+> -- reverse :: [a] -> [a]
+> 
 > chop :: Int -> [a] -> [[a]]
 > chop n [] = []
 > chop n l = hs : chop n ts
 >   where (hs, ts) = splitAt n l
+> -- splitAt :: Int -> [a] -> ([a], [a])
 
 And back to the problem
 =======================
