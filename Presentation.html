@@ -1,0 +1,3318 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Evaluating math with Haskell</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Aur Heru Saraf" />
+  <!-- configuration parameters -->
+  <meta name="defaultView" content="slideshow" />
+  <meta name="controlVis" content="hidden" />
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode, table.sourceCode pre 
+   { margin: 0; padding: 0; border: 0; vertical-align: baseline; border: none; }
+td.lineNumbers { border-right: 1px solid #AAAAAA; text-align: right; color: #AAAAAA; padding-right: 5px; padding-left: 5px; }
+td.sourceCode { padding-left: 5px; }
+pre.sourceCode span.kw { color: #007020; font-weight: bold; } 
+pre.sourceCode span.dt { color: #902000; }
+pre.sourceCode span.dv { color: #40a070; }
+pre.sourceCode span.bn { color: #40a070; }
+pre.sourceCode span.fl { color: #40a070; }
+pre.sourceCode span.ch { color: #4070a0; }
+pre.sourceCode span.st { color: #4070a0; }
+pre.sourceCode span.co { color: #60a0b0; font-style: italic; }
+pre.sourceCode span.ot { color: #007020; }
+pre.sourceCode span.al { color: red; font-weight: bold; }
+pre.sourceCode span.fu { color: #06287e; }
+pre.sourceCode span.re { }
+pre.sourceCode span.er { color: red; font-weight: bold; }
+  </style>
+<style type="text/css" media="projection" id="slideProj">
+/* Do not edit or override these styles! The system will likely break if you do. */
+
+div#header, div#footer, div#controls, .slide {position: absolute;}
+html>body div#header, html>body div#footer, 
+  html>body div#controls, html>body .slide {position: fixed;}
+.handout {display: none;}
+.layout {display: block;}
+.slide, .hideme, .incremental {visibility: hidden;}
+#slide0 {visibility: visible;}
+
+/* The following styles size, place, and layer the slide components.
+   Edit these if you want to change the overall slide layout.
+   The commented lines can be uncommented (and modified, if necessary) 
+    to help you with the rearrangement process. */
+
+/* target = 1024x768 */
+
+div#header, div#footer, .slide {width: 100%; top: 0; left: 0;}
+div#header {top: 0; height: 3em; z-index: 1;}
+div#footer {top: auto; bottom: 0; height: 2.5em; z-index: 5;}
+.slide {top: 0; width: 92%; padding: 3.5em 4% 4%; z-index: 2;  list-style: none;}
+div#controls {left: 50%; bottom: 0; width: 50%; z-index: 100;}
+div#controls form {position: absolute; bottom: 0; right: 0; width: 100%;
+  margin: 0;}
+#currentSlide {position: absolute; width: 10%; left: 45%; bottom: 1em; z-index: 10;}
+html>body #currentSlide {position: fixed;}
+
+/*
+div#header {background: #FCC;}
+div#footer {background: #CCF;}
+div#controls {background: #BBD;}
+div#currentSlide {background: #FFC;}
+*/
+
+/* Following are the presentation styles -- edit away! */
+
+body {background: #000 url(bodybg.gif) -16px 0 no-repeat; color: #fff; font-size: 2em;}
+:link, :visited {text-decoration: none; color: #00C;}
+h1, h2, h3, h4 {font-size: 100%; margin: 0; padding: 0; font-weight: inherit;}
+ul, pre {margin: 0; line-height: 1em;}
+html, body {margin: 0; padding: 0;}
+
+blockquote, q {font-style: italic;}
+blockquote {padding: 0 2em 0.5em; margin: 0 1.5em 0.5em; text-align: center; font-size: 1em;}
+blockquote p {margin: 0;}
+blockquote i {font-style: normal;}
+blockquote b {display: block; margin-top: 0.5em; font-weight: normal; font-size: smaller; font-style: normal;}
+blockquote b i {font-style: italic;}
+
+kbd {font-weight: bold; font-size: 1em;}
+sup {font-size: smaller; line-height: 1px;}
+
+.slide code {padding: 2px 0.25em; font-weight: bold; color: #f60;}
+.slide code.bad, code del {color: red;}
+.slide code.old {color: silver;}
+.slide pre {padding: 0; margin: 0.25em 0 0.5em 0.5em; color: #f60; font-size: 90%;}
+.slide pre code {display: block;}
+.slide ul {margin-left: 5%; margin-right: 7%; list-style: disc;}
+.slide li {margin-top: 0.75em; margin-right: 0;}
+.slide ul ul {line-height: 1;}
+.slide ul ul li {margin: .2em; font-size: 85%; list-style: square;}
+.slide img.leader {display: block; margin: 0 auto;}
+
+div#header, div#footer {
+  font-family: Verdana, Helvetica, sans-serif;}
+div#header {line-height: 1px;}
+div#footer {font-size: 0.5em; font-weight: bold; padding: 1em 0;}
+#footer h1, #footer h2 {display: block; padding: 0 1em;}
+#footer h2 {font-style: italic;}
+
+div.long {font-size: 0.75em;}
+.slide h1 {position: absolute; top: 0.7em; left: 87px; z-index: 1;
+  margin: 0; padding: 0.3em 0 0 50px; white-space: nowrap;
+  font: bold 150%/1em Helvetica, sans-serif; text-transform: capitalize;}
+.slide h3 {font-size: 130%;}
+h1 abbr {font-variant: small-caps;}
+
+div#controls {position: absolute; left: 50%; bottom: 0;
+  width: 50%;
+  text-align: right; font: bold 0.9em Verdana, Helvetica, sans-serif;}
+html>body div#controls {position: fixed; padding: 0 0 1em 0;
+  top: auto;}
+div#controls form {position: absolute; bottom: 0; right: 0; width: 100%;
+  margin: 0; padding: 0;}
+#controls #navLinks a {padding: 0; margin: 0 0.5em; 
+  border: none; cursor: pointer;}
+#controls #navList {height: 1em;}
+#controls #navList #jumplist {position: absolute; bottom: 0; right: 0;}
+
+#currentSlide {text-align: center; font-size: 0.5em;}
+
+#slide0 {padding-top: 3.5em; font-size: 90%;}
+#slide0 h1 {position: static; margin: 1em 0 0; padding: 0;
+   font: bold 2em Helvetica, sans-serif; white-space: normal;
+   background: transparent;}
+#slide0 h2 {font: bold italic 1em Helvetica, sans-serif; margin: 0.25em;}
+#slide0 h3 {margin-top: 1.5em; font-size: 1.5em;}
+#slide0 h4 {margin-top: 0; font-size: 1em;}
+
+ul.urls {list-style: none; display: inline; margin: 0;}
+.urls li {display: inline; margin: 0;}
+.note {display: none;}
+.external {border-bottom: 1px dotted gray;}
+html>body .external {border-bottom: none;}
+.external:after {content: " \274F"; font-size: smaller; color: #77B;}
+
+.incremental, .incremental *, .incremental *:after {color: #DDE; visibility: visible;}
+img.incremental {visibility: hidden;}
+.slide .current {color: #B02;}
+
+
+/* diagnostics
+
+li:after {content: " [" attr(class) "]"; color: #F88;}
+*/
+
+
+#header, #footer, .layout, .layout a {background: #333; color: #830;}
+#slide0 h1, .slide h1, .slide h2 {color: #f60; background: inherit;}
+.slide h2 {font-size: 150%; border: none; margin: 0.5em 0 0.em; text-align: center;}
+
+.slide .sourceCode code { color: inherit; }
+.slide pre.sourceCode { color: #cc6; }
+.slide pre.sourceCode span.kw { color: #f60; font-weight: bold; } 
+.slide pre.sourceCode span.dt { color: #fff; }
+.slide pre.sourceCode span.dv { color: #fe9; }
+.slide pre.sourceCode span.bn { color: gold; }
+.slide pre.sourceCode span.fl { color: #fe9; }
+.slide pre.sourceCode span.ch { color: gold; }
+.slide pre.sourceCode span.st { color: #6f0; }
+.slide pre.sourceCode span.co { color: #93c; font-style: italic; }
+.slide pre.sourceCode span.ot { color: #eff; }
+.slide pre.sourceCode span.al { color: gold; font-weight: bold; }
+.slide pre.sourceCode span.fu { color: #fc0; }
+.slide pre.sourceCode span.re { }
+.slide pre.sourceCode span.er { color: gold; font-weight: bold; }
+
+</style>
+<style type="text/css" media="projection" id="operaFix">
+/* DO NOT CHANGE THESE unless you really want to break Opera Show */
+.slide {
+	visibility: visible !important;
+	position: static !important;
+	page-break-before: always;
+}
+#slide0 {page-break-before: avoid;}
+
+</style>
+<style type="text/css" media="screen" id="outlineStyle">
+/* don't change this unless you want the layout stuff to show up in the outline view! */
+
+.layout div, #footer *, #controlForm * {display: none;}
+#footer, #controls, #controlForm, #navLinks, #toggle {
+  display: block; visibility: visible; margin: 0; padding: 0;}
+#toggle {float: right; padding: 0.5em;}
+html>body #toggle {position: fixed; top: 0; right: 0;}
+
+/* making the outline look pretty-ish */
+
+#slide0 h1, #slide0 h2, #slide0 h3, #slide0 h4 {border: none; margin: 0;}
+#slide0 h1 {padding-top: 1.5em;}
+.slide h1 {margin: 1.5em 0 0; padding-top: 0.25em;
+  border-top: 1px solid #888; border-bottom: 1px solid #AAA;}
+#toggle {border: 1px solid; border-width: 0 0 1px 1px; background: #FFF;}
+
+</style>
+<style type="text/css" media="print" id="slidePrint">
+/* The following rule is necessary to have all slides appear in print! DO NOT REMOVE IT! */
+.slide, ul {page-break-inside: avoid; visibility: visible !important;}
+h1 {page-break-after: avoid;}
+
+body {font-size: 12pt; background: white;}
+* {color: black;}
+
+#slide0 h1 {font-size: 200%; border: none; margin: 0.5em 0 0.25em;}
+#slide0 h3 {margin: 0; padding: 0;}
+#slide0 h4 {margin: 0 0 0.5em; padding: 0;}
+#slide0 {margin-bottom: 3em;}
+
+h1 {border-top: 2pt solid gray; border-bottom: 1px dotted silver;}
+.extra {background: transparent !important;}
+div.extra, pre.extra, .example {font-size: 10pt; color: #333;}
+ul.extra a {font-weight: bold;}
+p.example {display: none;}
+
+#header {display: none;}
+#footer h1 {margin: 0; border-bottom: 1px solid; color: gray; font-style: italic;}
+#footer h2, #controls {display: none;}
+
+/* The following rule keeps the layout stuff out of print.  Remove at your own risk! */
+.layout, .layout * {display: none !important;}
+
+</style>
+<script type="text/javascript">
+// S5 v1.1 slides.js -- released into the Public Domain
+//
+// Please see http://www.meyerweb.com/eric/tools/s5/credits.html for information 
+// about all the wonderful and talented contributors to this code!
+var undef;var slideCSS='';var snum=0;var smax=1;var incpos=0;var number=undef;var s5mode=true;var defaultView='slideshow';var controlVis='visible';var isIE=navigator.appName=='Microsoft Internet Explorer'&&navigator.userAgent.indexOf('Opera')<1?1:0;var isOp=navigator.userAgent.indexOf('Opera')>-1?1:0;var isGe=navigator.userAgent.indexOf('Gecko')>-1&&navigator.userAgent.indexOf('Safari')<1?1:0;function hasClass(object,className){if(!object.className)return false;return(object.className.search('(^|\\s)'+className+'(\\s|$)')!=-1);}
+function hasValue(object,value){if(!object)return false;return(object.search('(^|\\s)'+value+'(\\s|$)')!=-1);}
+function removeClass(object,className){if(!object)return;object.className=object.className.replace(new RegExp('(^|\\s)'+className+'(\\s|$)'),RegExp.$1+RegExp.$2);}
+function addClass(object,className){if(!object||hasClass(object,className))return;if(object.className){object.className+=' '+className;}else{object.className=className;}}
+function GetElementsWithClassName(elementName,className){var allElements=document.getElementsByTagName(elementName);var elemColl=new Array();for(var i=0;i<allElements.length;i++){if(hasClass(allElements[i],className)){elemColl[elemColl.length]=allElements[i];}}
+return elemColl;}
+function isParentOrSelf(element,id){if(element==null||element.nodeName=='BODY')return false;else if(element.id==id)return true;else return isParentOrSelf(element.parentNode,id);}
+function nodeValue(node){var result="";if(node.nodeType==1){var children=node.childNodes;for(var i=0;i<children.length;++i){result+=nodeValue(children[i]);}}
+else if(node.nodeType==3){result=node.nodeValue;}
+return(result);}
+function slideLabel(){var slideColl=GetElementsWithClassName('*','slide');var list=document.getElementById('jumplist');smax=slideColl.length;for(var n=0;n<smax;n++){var obj=slideColl[n];var did='slide'+n.toString();obj.setAttribute('id',did);if(isOp)continue;var otext='';var menu=obj.firstChild;if(!menu)continue;while(menu&&menu.nodeType==3){menu=menu.nextSibling;}
+if(!menu)continue;var menunodes=menu.childNodes;for(var o=0;o<menunodes.length;o++){otext+=nodeValue(menunodes[o]);}
+list.options[list.length]=new Option(n+' : '+otext,n);}}
+function currentSlide(){var cs;if(document.getElementById){cs=document.getElementById('currentSlide');}else{cs=document.currentSlide;}
+cs.innerHTML='<span id="csHere">'+snum+'<\/span> '+'<span id="csSep">\/<\/span> '+'<span id="csTotal">'+(smax-1)+'<\/span>';if(snum==0){cs.style.visibility='hidden';}else{cs.style.visibility='visible';}}
+function go(step){if(document.getElementById('slideProj').disabled||step==0)return;var jl=document.getElementById('jumplist');var cid='slide'+snum;var ce=document.getElementById(cid);if(incrementals[snum].length>0){for(var i=0;i<incrementals[snum].length;i++){removeClass(incrementals[snum][i],'current');removeClass(incrementals[snum][i],'incremental');}}
+if(step!='j'){snum+=step;lmax=smax-1;if(snum>lmax)snum=lmax;if(snum<0)snum=0;}else
+snum=parseInt(jl.value);var nid='slide'+snum;var ne=document.getElementById(nid);if(!ne){ne=document.getElementById('slide0');snum=0;}
+if(step<0){incpos=incrementals[snum].length}else{incpos=0;}
+if(incrementals[snum].length>0&&incpos==0){for(var i=0;i<incrementals[snum].length;i++){if(hasClass(incrementals[snum][i],'current'))
+incpos=i+1;else
+addClass(incrementals[snum][i],'incremental');}}
+if(incrementals[snum].length>0&&incpos>0)
+addClass(incrementals[snum][incpos-1],'current');ce.style.visibility='hidden';ne.style.visibility='visible';jl.selectedIndex=snum;currentSlide();number=0;}
+function goTo(target){if(target>=smax||target==snum)return;go(target-snum);}
+function subgo(step){if(step>0){removeClass(incrementals[snum][incpos-1],'current');removeClass(incrementals[snum][incpos],'incremental');addClass(incrementals[snum][incpos],'current');incpos++;}else{incpos--;removeClass(incrementals[snum][incpos],'current');addClass(incrementals[snum][incpos],'incremental');addClass(incrementals[snum][incpos-1],'current');}}
+function toggle(){var slideColl=GetElementsWithClassName('*','slide');var slides=document.getElementById('slideProj');var outline=document.getElementById('outlineStyle');if(!slides.disabled){slides.disabled=true;outline.disabled=false;s5mode=false;fontSize('1em');for(var n=0;n<smax;n++){var slide=slideColl[n];slide.style.visibility='visible';}}else{slides.disabled=false;outline.disabled=true;s5mode=true;fontScale();for(var n=0;n<smax;n++){var slide=slideColl[n];slide.style.visibility='hidden';}
+slideColl[snum].style.visibility='visible';}}
+function showHide(action){var obj=GetElementsWithClassName('*','hideme')[0];switch(action){case's':obj.style.visibility='visible';break;case'h':obj.style.visibility='hidden';break;case'k':if(obj.style.visibility!='visible'){obj.style.visibility='visible';}else{obj.style.visibility='hidden';}
+break;}}
+function keys(key){if(!key){key=event;key.which=key.keyCode;}
+if(key.which==84){toggle();return;}
+if(s5mode){switch(key.which){case 10:case 13:if(window.event&&isParentOrSelf(window.event.srcElement,'controls'))return;if(key.target&&isParentOrSelf(key.target,'controls'))return;if(number!=undef){goTo(number);break;}
+case 32:case 34:case 39:case 40:if(number!=undef){go(number);}else if(!incrementals[snum]||incpos>=incrementals[snum].length){go(1);}else{subgo(1);}
+break;case 33:case 37:case 38:if(number!=undef){go(-1*number);}else if(!incrementals[snum]||incpos<=0){go(-1);}else{subgo(-1);}
+break;case 36:goTo(0);break;case 35:goTo(smax-1);break;case 67:showHide('k');break;}
+if(key.which<48||key.which>57){number=undef;}else{if(window.event&&isParentOrSelf(window.event.srcElement,'controls'))return;if(key.target&&isParentOrSelf(key.target,'controls'))return;number=(((number!=undef)?number:0)*10)+(key.which-48);}}
+return false;}
+function clicker(e){number=undef;var target;if(window.event){target=window.event.srcElement;e=window.event;}else target=e.target;if(target.getAttribute('href')!=null||hasValue(target.rel,'external')||isParentOrSelf(target,'controls')||isParentOrSelf(target,'embed')||isParentOrSelf(target,'object'))return true;if(!e.which||e.which==1){if(!incrementals[snum]||incpos>=incrementals[snum].length){go(1);}else{subgo(1);}}}
+function findSlide(hash){var target=null;var slides=GetElementsWithClassName('*','slide');for(var i=0;i<slides.length;i++){var targetSlide=slides[i];if((targetSlide.name&&targetSlide.name==hash)||(targetSlide.id&&targetSlide.id==hash)){target=targetSlide;break;}}
+while(target!=null&&target.nodeName!='BODY'){if(hasClass(target,'slide')){return parseInt(target.id.slice(5));}
+target=target.parentNode;}
+return null;}
+function slideJump(){if(window.location.hash==null)return;var sregex=/^#slide(\d+)$/;var matches=sregex.exec(window.location.hash);var dest=null;if(matches!=null){dest=parseInt(matches[1]);}else{dest=findSlide(window.location.hash.slice(1));}
+if(dest!=null)
+go(dest-snum);}
+function fixLinks(){var thisUri=window.location.href;thisUri=thisUri.slice(0,thisUri.length-window.location.hash.length);var aelements=document.getElementsByTagName('A');for(var i=0;i<aelements.length;i++){var a=aelements[i].href;var slideID=a.match('\#slide[0-9]{1,2}');if((slideID)&&(slideID[0].slice(0,1)=='#')){var dest=findSlide(slideID[0].slice(1));if(dest!=null){if(aelements[i].addEventListener){aelements[i].addEventListener("click",new Function("e","if (document.getElementById('slideProj').disabled) return;"+"go("+dest+" - snum); "+"if (e.preventDefault) e.preventDefault();"),true);}else if(aelements[i].attachEvent){aelements[i].attachEvent("onclick",new Function("","if (document.getElementById('slideProj').disabled) return;"+"go("+dest+" - snum); "+"event.returnValue = false;"));}}}}}
+function externalLinks(){if(!document.getElementsByTagName)return;var anchors=document.getElementsByTagName('a');for(var i=0;i<anchors.length;i++){var anchor=anchors[i];if(anchor.getAttribute('href')&&hasValue(anchor.rel,'external')){anchor.target='_blank';addClass(anchor,'external');}}}
+function createControls(){var controlsDiv=document.getElementById("controls");if(!controlsDiv)return;var hider=' onmouseover="showHide(\'s\');" onmouseout="showHide(\'h\');"';var hideDiv,hideList='';if(controlVis=='hidden'){hideDiv=hider;}else{hideList=hider;}
+controlsDiv.innerHTML='<form action="#" id="controlForm"'+hideDiv+'>'+'<div id="navLinks">'+'<a accesskey="t" id="toggle" href="javascript:toggle();">&#216;<\/a>'+'<a accesskey="z" id="prev" href="javascript:go(-1);">&laquo;<\/a>'+'<a accesskey="x" id="next" href="javascript:go(1);">&raquo;<\/a>'+'<div id="navList"'+hideList+'><select id="jumplist" onchange="go(\'j\');"><\/select><\/div>'+'<\/div><\/form>';if(controlVis=='hidden'){var hidden=document.getElementById('navLinks');}else{var hidden=document.getElementById('jumplist');}
+addClass(hidden,'hideme');}
+function fontScale(){if(!s5mode)return false;var vScale=22;var hScale=32;if(window.innerHeight){var vSize=window.innerHeight;var hSize=window.innerWidth;}else if(document.documentElement.clientHeight){var vSize=document.documentElement.clientHeight;var hSize=document.documentElement.clientWidth;}else if(document.body.clientHeight){var vSize=document.body.clientHeight;var hSize=document.body.clientWidth;}else{var vSize=700;var hSize=1024;}
+var newSize=Math.min(Math.round(vSize/vScale),Math.round(hSize/hScale));fontSize(newSize+'px');if(isGe){var obj=document.getElementsByTagName('body')[0];obj.style.display='none';obj.style.display='block';}}
+function fontSize(value){if(!(s5ss=document.getElementById('s5ss'))){if(!isIE){document.getElementsByTagName('head')[0].appendChild(s5ss=document.createElement('style'));s5ss.setAttribute('media','screen, projection');s5ss.setAttribute('id','s5ss');}else{document.createStyleSheet();document.s5ss=document.styleSheets[document.styleSheets.length-1];}}
+if(!isIE){while(s5ss.lastChild)s5ss.removeChild(s5ss.lastChild);s5ss.appendChild(document.createTextNode('body {font-size: '+value+' !important;}'));}else{document.s5ss.addRule('body','font-size: '+value+' !important;');}}
+function notOperaFix(){slideCSS=document.getElementById('slideProj').href;var slides=document.getElementById('slideProj');var outline=document.getElementById('outlineStyle');slides.setAttribute('media','screen');outline.disabled=true;if(isGe){slides.setAttribute('href','null');slides.setAttribute('href',slideCSS);}
+if(isIE&&document.styleSheets&&document.styleSheets[0]){document.styleSheets[0].addRule('img','behavior: url(ui/default/iepngfix.htc)');document.styleSheets[0].addRule('div','behavior: url(ui/default/iepngfix.htc)');document.styleSheets[0].addRule('.slide','behavior: url(ui/default/iepngfix.htc)');}}
+function getIncrementals(obj){var incrementals=new Array();if(!obj)
+return incrementals;var children=obj.childNodes;for(var i=0;i<children.length;i++){var child=children[i];if(hasClass(child,'incremental')){if(child.nodeName=='OL'||child.nodeName=='UL'){removeClass(child,'incremental');for(var j=0;j<child.childNodes.length;j++){if(child.childNodes[j].nodeType==1){addClass(child.childNodes[j],'incremental');}}}else{incrementals[incrementals.length]=child;removeClass(child,'incremental');}}
+if(hasClass(child,'show-first')){if(child.nodeName=='OL'||child.nodeName=='UL'){removeClass(child,'show-first');if(child.childNodes[isGe].nodeType==1){removeClass(child.childNodes[isGe],'incremental');}}else{incrementals[incrementals.length]=child;}}
+incrementals=incrementals.concat(getIncrementals(child));}
+return incrementals;}
+function createIncrementals(){var incrementals=new Array();for(var i=0;i<smax;i++){incrementals[i]=getIncrementals(document.getElementById('slide'+i));}
+return incrementals;}
+function defaultCheck(){var allMetas=document.getElementsByTagName('meta');for(var i=0;i<allMetas.length;i++){if(allMetas[i].name=='defaultView'){defaultView=allMetas[i].content;}
+if(allMetas[i].name=='controlVis'){controlVis=allMetas[i].content;}}}
+function trap(e){if(!e){e=event;e.which=e.keyCode;}
+try{modifierKey=e.ctrlKey||e.altKey||e.metaKey;}
+catch(e){modifierKey=false;}
+return modifierKey||e.which==0;}
+function startup(){defaultCheck();if(!isOp)
+createControls();slideLabel();fixLinks();externalLinks();fontScale();if(!isOp){notOperaFix();incrementals=createIncrementals();slideJump();if(defaultView=='outline'){toggle();}
+document.onkeyup=keys;document.onkeypress=trap;document.onclick=clicker;}}
+window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
+</script>
+  <script type="text/javascript"
+  >/* 
+  March 19, 2004 MathHTML (c) Peter Jipsen http://www.chapman.edu/~jipsen
+  Released under the GNU General Public License version 2 or later.
+  See the GNU General Public License (at http://www.gnu.org/copyleft/gpl.html)
+  for more details.
+  */
+  
+  function convertMath(node) {// for Gecko
+    if (node.nodeType==1) {
+      var newnode = 
+        document.createElementNS("http://www.w3.org/1998/Math/MathML",
+          node.nodeName.toLowerCase());
+      for(var i=0; i < node.attributes.length; i++)
+        newnode.setAttribute(node.attributes[i].nodeName,
+          node.attributes[i].nodeValue);
+      for (var i=0; i<node.childNodes.length; i++) {
+        var st = node.childNodes[i].nodeValue;
+        if (st==null || st.slice(0,1)!=" " && st.slice(0,1)!="\n") 
+          newnode.appendChild(convertMath(node.childNodes[i]));
+      }
+      return newnode;
+    }
+    else return node;
+  }
+  
+  function convert() {
+    var mmlnode = document.getElementsByTagName("math");
+    var st,str,node,newnode;
+    for (var i=0; i<mmlnode.length; i++)
+      if (document.createElementNS!=null)
+        mmlnode[i].parentNode.replaceChild(convertMath(mmlnode[i]),mmlnode[i]);
+      else { // convert for IE
+        str = "";
+        node = mmlnode[i];
+        while (node.nodeName!="/MATH") {
+          st = node.nodeName.toLowerCase();
+          if (st=="#text") str += node.nodeValue;
+          else {
+            str += (st.slice(0,1)=="/" ? "</m:"+st.slice(1) : "<m:"+st);
+            if (st.slice(0,1)!="/") 
+               for(var j=0; j < node.attributes.length; j++)
+                 if (node.attributes[j].nodeValue!="italic" &&
+                   node.attributes[j].nodeValue!="" &&
+                   node.attributes[j].nodeValue!="inherit" &&
+                   node.attributes[j].nodeValue!=undefined)
+                   str += " "+node.attributes[j].nodeName+"="+
+                       "\""+node.attributes[j].nodeValue+"\"";
+            str += ">";
+          }
+          node = node.nextSibling;
+          node.parentNode.removeChild(node.previousSibling);
+        }
+        str += "</m:math>";
+        newnode = document.createElement("span");
+        node.parentNode.replaceChild(newnode,node);
+        newnode.innerHTML = str;
+      }
+  }
+  
+  if (document.createElementNS==null) {
+    document.write("<object id=\"mathplayer\"\
+    classid=\"clsid:32F66A20-7614-11D4-BD11-00104BD3F987\"></object>");
+    document.write("<?import namespace=\"m\" implementation=\"#mathplayer\"?>");
+  }
+  if(typeof window.addEventListener != 'undefined'){
+    window.addEventListener('load', convert, false);
+  }
+  if(typeof window.attachEvent != 'undefined') {
+    window.attachEvent('onload', convert);
+  }
+  </script
+  >
+</head>
+<body>
+<div class="layout">
+<div id="controls"></div>
+<div id="currentSlide"></div>
+<div id="header"></div>
+<div id="footer">
+  <h1></h1>
+  <h2>Evaluating math with Haskell</h2>
+</div>
+</div>
+<div class="presentation">
+<div class="slide">
+  <h1>Evaluating math with Haskell</h1>
+  <h3>Aur Heru Saraf</h3>
+  <h4></h4>
+</div>
+<div class="slide">
+<h1
+>This presentation is Literate Haskell</h1
+><p
+>This means it can be executed.</p
+><p
+>Indeed, if you are reading it at home, feel free to load it in GHCi and play with the definitions.</p
+><p
+>So lets start with some imports, which you can ignore...</p
+><pre class="sourceCode haskell"
+><code
+  ><span class="ot"
+    >{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span
+    ><br
+     /><span class="kw"
+    >module</span
+    > <span class="dt"
+    >Presentation</span
+    > <span class="kw"
+    >where</span
+    ><br
+     /><span class="kw"
+    >import</span
+    > <span class="dt"
+    >Data.List</span
+    ><br
+     /><span class="kw"
+    >import</span
+    > <span class="dt"
+    >Data.Ord</span
+    ><br
+     /><span class="kw"
+    >import</span
+    > <span class="dt"
+    >Test.QuickCheck</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Hello, my name is Aur</h1
+><ul
+><li
+  ><p
+    >I ask many questions when I watch a presentation</p
+    ></li
+  ><li
+  ><p
+    >I write my presentations as if I were in the crowd</p
+    ></li
+  ><li
+  ><p
+    >Therefore, this will go much better if everyone asks many questions</p
+    ></li
+  ></ul
+></div>
+<div class="slide">
+<h1
+>Hello, my name is Haskell</h1
+><h2
+>Pure functional, lazy, type inferring programming language</h2
+></div>
+<div class="slide">
+<h1
+>Good things people say about me</h1
+><ul
+><li
+  >WOW! I basically wrote this without testing just thinking about my program in terms of transformations between types. I wrote the test/example code and had almost no implementation errors in the code! The compiler/type-system is really really good at preventing you from making coding mistakes! I've never in my life had a block of code this big work on the first try. I am WAY impressed.</li
+  ></ul
+></div>
+<div class="slide">
+<h1
+>Good things people say about me</h1
+><ul
+><li
+  >I learned Haskell a couple of years ago, having previously programmed in Python and (many) other languages. Recently, I've been using Python for a project (the choice being determined by both technical and non-technical issues), and find my Python programming style is now heavily influenced (for the better, I hope ;-) by my Haskell programming experience.</li
+  ></ul
+></div>
+<div class="slide">
+<h1
+>Bad things people say about me</h1
+><ul
+><li
+  >As with pretty much any given functional programming language, things are so unintuitive that, well, I can't even explain properly how BAD things are. I'm studying haskell for college and I must say, when I compare the things I can do with C (I can even use pointers well), Java (I solve problems with classes), Python (I solve problems in simpler ways than C or Java) and even Shell Scripts (and that's something!) with Haskell (I pretty much can't do a thing), I know something must have gone terribly wrong!</li
+  ></ul
+></div>
+<div class="slide">
+<h1
+>Reading Haskell</h1
+><p
+>Don't panic!</p
+></div>
+<div class="slide">
+<h1
+>Definitions, Type Declarations, IO</h1
+><pre class="sourceCode haskell"
+><code
+  >main :: <span class="dt"
+    >IO</span
+    > ()<br
+     />main <span class="fu"
+    >=</span
+    > <span class="fu"
+    >putStrLn</span
+    > <span class="st"
+    >&quot;Hello, World!&quot;</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Functions, Lists, Pattern Matching</h1
+><pre class="sourceCode haskell"
+><code
+  >head' :: [a] -&gt; a<br
+     />head' (x <span class="fu"
+    >:</span
+    > _) <span class="fu"
+    >=</span
+    > x<br
+     />head' [] <span class="fu"
+    >=</span
+    > <span class="fu"
+    >undefined</span
+    ><br
+     /><span class="co"
+    >-- undefined :: a</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Composition</h1
+><pre class="sourceCode haskell"
+><code
+  >second :: [a] -&gt; a<br
+     />second <span class="fu"
+    >=</span
+    > <span class="fu"
+    >head</span
+    > <span class="fu"
+    >.</span
+    > <span class="fu"
+    >tail</span
+    ><br
+     /><span class="co"
+    >-- tail :: [a] -&gt; [a]</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Operators</h1
+><pre class="sourceCode haskell"
+><code
+  >(=~) :: <span class="dt"
+    >Double</span
+    > -&gt; <span class="dt"
+    >Double</span
+    > -&gt; <span class="dt"
+    >Bool</span
+    ><br
+     />a <span class="fu"
+    >=~</span
+    > b <span class="fu"
+    >=</span
+    > <span class="fu"
+    >abs</span
+    > (b <span class="fu"
+    >-</span
+    > a) <span class="fu"
+    >/</span
+    > <span class="fu"
+    >sqrt</span
+    > (a<span class="fu"
+    >*</span
+    >a <span class="fu"
+    >+</span
+    > b<span class="fu"
+    >*</span
+    >b) <span class="fu"
+    >&lt;</span
+    > <span class="dv"
+    >0</span
+    ><span class="fu"
+    >.</span
+    ><span class="dv"
+    >01</span
+    ><br
+     /></code
+  ></pre
+><pre class="sourceCode haskell"
+><code
+  >half :: <span class="dt"
+    >Double</span
+    > -&gt; <span class="dt"
+    >Double</span
+    ><br
+     />half <span class="fu"
+    >=</span
+    > (<span class="fu"
+    >/</span
+    ><span class="dv"
+    >2</span
+    ><span class="fu"
+    >.</span
+    ><span class="dv"
+    >0</span
+    >)<br
+     /></code
+  ></pre
+><pre class="sourceCode haskell"
+><code
+  >xor :: <span class="dt"
+    >Bool</span
+    > -&gt; <span class="dt"
+    >Bool</span
+    > -&gt; <span class="dt"
+    >Bool</span
+    ><br
+     />xor <span class="kw"
+    >True</span
+    > <span class="kw"
+    >True</span
+    > <span class="fu"
+    >=</span
+    > <span class="kw"
+    >False</span
+    ><br
+     />xor <span class="kw"
+    >False</span
+    > <span class="kw"
+    >False</span
+    > <span class="fu"
+    >=</span
+    > <span class="kw"
+    >False</span
+    ><br
+     />xor _ _ <span class="fu"
+    >=</span
+    > <span class="kw"
+    >True</span
+    ><br
+     /></code
+  ></pre
+><pre class="sourceCode haskell"
+><code
+  >exactlyOne42 :: <span class="dt"
+    >Int</span
+    > -&gt; <span class="dt"
+    >Int</span
+    > -&gt; <span class="dt"
+    >Bool</span
+    ><br
+     />exactlyOne42 a b <span class="fu"
+    >=</span
+    > (a <span class="fu"
+    >==</span
+    > <span class="dv"
+    >42</span
+    >) <span class="ot"
+    >`xor`</span
+    > (b <span class="fu"
+    >==</span
+    > <span class="dv"
+    >42</span
+    >)<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Indentation, Currying, ...</h1
+><h2
+>... Higher-Order Functions, Operators, Lazyness, Type Inference</h2
+><pre class="sourceCode haskell"
+><code
+  >fib n <span class="fu"
+    >=</span
+    > fib' <span class="fu"
+    >!!</span
+    > n<br
+     />  <span class="kw"
+    >where</span
+    > fib' <span class="fu"
+    >=</span
+    >  (<span class="dv"
+    >0</span
+    > <span class="fu"
+    >:</span
+    > <span class="dv"
+    >1</span
+    > <span class="fu"
+    >:</span
+    > <span class="fu"
+    >zipWith</span
+    > (<span class="fu"
+    >+</span
+    >) fib' (<span class="fu"
+    >tail</span
+    > fib'))<br
+     /><span class="co"
+    >-- (!!) :: [a] -&gt; Int -&gt; a</span
+    ><br
+     /><span class="co"
+    >-- zipWith :: (a -&gt; b -&gt; c) -&gt; [a] -&gt; [b] -&gt; [c]</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Laziness example</h1
+><p
+>Lets say we ask Haskell to print the first five items of fib'.</p
+><p
+>fib' = <code
+  >(0 : 1 : zipWith (+) fib' (tail fib'))</code
+  ></p
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><p
+>fib' = (f0 : f0')</p
+><p
+>f0 = 0</p
+><p
+>f0' = <code
+  >1 : zipWith (+) fib' (tail fib')</code
+  ></p
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><p
+>fib' = (f0 : f0')</p
+><p
+>f0 = 0</p
+><p
+>f0' = (f1 : f1')</p
+><p
+>f1 = 1</p
+><p
+>f1' = <code
+  >zipWith (+) fib' (tail fib')</code
+  ></p
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><p
+>fib' = (f0 : f0')</p
+><p
+>f0 = 0</p
+><p
+>f1 = 1</p
+><p
+>(x : x') = <code
+  >fib'</code
+  > = (f0 : f0')</p
+><p
+>(y : y') = <code
+  >tail fib'</code
+  > = (f1 : f1')</p
+><p
+>f2 = <code
+  >x + y</code
+  > = f0 + f1 = 0 + 1 = 1</p
+><p
+>f2' = <code
+  >zipWith (+) f0' f1'</code
+  ></p
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><p
+>(x_ : x'') = f0' = (f1 : f1')</p
+><p
+>(y_ : y'') = f1' = (f2 : f2')</p
+><p
+>f3 = <code
+  >x_ + y_</code
+  > = f1 + f2 = 1 + 1 = 2</p
+><p
+>f3' = <code
+  >zipWith (+) f1' f2'</code
+  ></p
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><p
+>(x__ : x''') = f1' = (f2 : f2')</p
+><p
+>(y__ : y''') = f2' = (f3 : f3')</p
+><p
+>f4 = <code
+  >x__ + y__</code
+  > = f2 + f3 = 1 + 2 = 3</p
+><p
+>f4' = <code
+  >zipWith (+) f2' f3'</code
+  ></p
+></div>
+<div class="slide">
+<h1
+>Algebraic Data Types</h1
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >Labeled</span
+    > a <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Label</span
+    > <span class="dt"
+    >String</span
+    > a<br
+     />label (<span class="dt"
+    >Label</span
+    > l _) <span class="fu"
+    >=</span
+    > l<br
+     />value (<span class="dt"
+    >Label</span
+    > _ v) <span class="fu"
+    >=</span
+    > v<br
+     /></code
+  ></pre
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >Bool'</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >False'</span
+    > <span class="fu"
+    >|</span
+    > <span class="dt"
+    >True'</span
+    ><br
+     /><br
+     />not' :: <span class="dt"
+    >Bool'</span
+    > -&gt; <span class="dt"
+    >Bool'</span
+    ><br
+     />not' <span class="dt"
+    >False'</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >True'</span
+    ><br
+     />not' <span class="dt"
+    >True'</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >False'</span
+    ><br
+     /></code
+  ></pre
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >List</span
+    > a <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Empty</span
+    > <span class="fu"
+    >|</span
+    > a ::<span class="fu"
+    >:</span
+    > <span class="dt"
+    >List</span
+    > a<br
+     /><br
+     />tail' :: <span class="dt"
+    >List</span
+    > a -&gt; <span class="dt"
+    >List</span
+    > a<br
+     />tail' (_ ::<span class="fu"
+    >:</span
+    > xs) <span class="fu"
+    >=</span
+    > xs<br
+     />tail' <span class="dt"
+    >Empty</span
+    > <span class="fu"
+    >=</span
+    > <span class="fu"
+    >undefined</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Type Classes</h1
+><pre class="sourceCode haskell"
+><code
+  >maxSucc :: (<span class="kw"
+    >Ord</span
+    > a) =&gt; [a] -&gt; a<br
+     />maxSucc xs <span class="fu"
+    >=</span
+    > <span class="fu"
+    >maximum</span
+    > (delete (<span class="fu"
+    >maximum</span
+    > xs) xs)<br
+     /><span class="co"
+    >-- maximum :: (Ord a) =&gt; [a] -&gt; a</span
+    ><br
+     /><span class="co"
+    >-- delete :: a -&gt; [a] -&gt; [a]</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Writing Type Classes</h1
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >Peano</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Zero</span
+    ><br
+     />           <span class="fu"
+    >|</span
+    > <span class="dt"
+    >Succ</span
+    > <span class="dt"
+    >Peano</span
+    ><br
+     />    <span class="kw"
+    >deriving</span
+    > (<span class="kw"
+    >Show</span
+    >, <span class="kw"
+    >Read</span
+    >, <span class="kw"
+    >Eq</span
+    >)<br
+     /><br
+     /><span class="kw"
+    >instance</span
+    > <span class="kw"
+    >Ord</span
+    > <span class="dt"
+    >Peano</span
+    > <span class="kw"
+    >where</span
+    ><br
+     />    <span class="co"
+    >-- compare :: Peano -&gt; Peano -&gt; Ordering</span
+    ><br
+     />    <span class="co"
+    >-- data Ordering = LT | EQ | GT deriving Eq</span
+    ><br
+     />    <span class="fu"
+    >compare</span
+    > (<span class="dt"
+    >Succ</span
+    > x) (<span class="dt"
+    >Succ</span
+    > y) <span class="fu"
+    >=</span
+    > <span class="fu"
+    >compare</span
+    > x y<br
+     />    <span class="fu"
+    >compare</span
+    > <span class="dt"
+    >Zero</span
+    >     (<span class="dt"
+    >Succ</span
+    > _) <span class="fu"
+    >=</span
+    > <span class="kw"
+    >LT</span
+    ><br
+     />    <span class="fu"
+    >compare</span
+    > (<span class="dt"
+    >Succ</span
+    > _) <span class="dt"
+    >Zero</span
+    >     <span class="fu"
+    >=</span
+    > <span class="kw"
+    >GT</span
+    ><br
+     />    <span class="fu"
+    >compare</span
+    > <span class="dt"
+    >Zero</span
+    >     <span class="dt"
+    >Zero</span
+    >     <span class="fu"
+    >=</span
+    > <span class="kw"
+    >EQ</span
+    ><br
+     /><br
+     />    <span class="fu"
+    >min</span
+    > (<span class="dt"
+    >Succ</span
+    > x) (<span class="dt"
+    >Succ</span
+    > y) <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Succ</span
+    > (<span class="fu"
+    >min</span
+    > x y)<br
+     />    <span class="fu"
+    >min</span
+    > _        _        <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Zero</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><pre class="sourceCode haskell"
+><code
+  >    <span class="fu"
+    >max</span
+    > (<span class="dt"
+    >Succ</span
+    > x) (<span class="dt"
+    >Succ</span
+    > y) <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Succ</span
+    > (<span class="fu"
+    >max</span
+    > x y)<br
+     />    <span class="fu"
+    >max</span
+    > <span class="dt"
+    >Zero</span
+    >     y        <span class="fu"
+    >=</span
+    > y<br
+     />    <span class="fu"
+    >max</span
+    > x        <span class="dt"
+    >Zero</span
+    >     <span class="fu"
+    >=</span
+    > x<br
+     /><br
+     />    _      <span class="fu"
+    >&lt;</span
+    > <span class="dt"
+    >Zero</span
+    >   <span class="fu"
+    >=</span
+    > <span class="kw"
+    >False</span
+    ><br
+     />    <span class="dt"
+    >Zero</span
+    >   <span class="fu"
+    >&lt;</span
+    > _      <span class="fu"
+    >=</span
+    > <span class="kw"
+    >True</span
+    ><br
+     />    <span class="dt"
+    >Succ</span
+    > n <span class="fu"
+    >&lt;</span
+    > <span class="dt"
+    >Succ</span
+    > m <span class="fu"
+    >=</span
+    > n <span class="fu"
+    >&lt;</span
+    > m<br
+     /><br
+     />    x <span class="fu"
+    >&gt;</span
+    > y  <span class="fu"
+    >=</span
+    > y <span class="fu"
+    >&lt;</span
+    > x<br
+     /><br
+     />    x <span class="fu"
+    >&lt;=</span
+    > y <span class="fu"
+    >=</span
+    > <span class="fu"
+    >not</span
+    > (y <span class="fu"
+    >&lt;</span
+    > x)<br
+     /><br
+     />    x <span class="fu"
+    >&gt;=</span
+    > y <span class="fu"
+    >=</span
+    > <span class="fu"
+    >not</span
+    > (x <span class="fu"
+    >&lt;</span
+    > y)<br
+     /></code
+  ></pre
+><p
+>(From <a href="http://code.haskell.org/~thielema/htam/src/Number/PeanoNumber.hs"
+  ><code
+    >http://code.haskell.org/~thielema/htam/src/Number/PeanoNumber.hs</code
+    ></a
+  >)</p
+></div>
+<div class="slide">
+<h1
+>Properties of Haskell</h1
+><ul
+><li
+  ><p
+    >Pure</p
+    ></li
+  ><li
+  ><p
+    >Type inferring</p
+    ></li
+  ><li
+  ><p
+    >Lazy</p
+    ></li
+  ></ul
+></div>
+<div class="slide">
+<h1
+>Pure</h1
+><p
+><code
+  >f x</code
+  > does exactly the same thing as <code
+  >f x</code
+  ></p
+><p
+>Therefore, no side-effects.</p
+><p
+>Helps debugging and reasoning about code.</p
+><p
+>Can be seen as a &quot;permissions&quot; system for the code.</p
+></div>
+<div class="slide">
+<h1
+>Purity rocks</h1
+><p
+>What does <code
+  >f :: a -&gt; a</code
+  > do?</p
+><p
+>What does <code
+  >g :: [a] -&gt; a</code
+  > do?</p
+><p
+>What does <code
+  >h :: (a, b) -&gt; a</code
+  > do?</p
+><p
+>What does <code
+  >i :: (Num a) =&gt; a -&gt; a</code
+  > do?</p
+><p
+>What does <code
+  >j :: IO ()</code
+  > do?</p
+></div>
+<div class="slide">
+<h1
+>Type Inference</h1
+><p
+>C#:</p
+><pre
+><code
+  >Int f(Map&lt;String, Map&lt;String, Int&gt;&gt; map, String k1, String k2) {
+    return map[k1][k2];
+}
+</code
+  ></pre
+><p
+>Haskell:</p
+><pre
+><code
+  >f map k1 k2 = map ! k1 ! k2
+</code
+  ></pre
+><p
+>And we even get generality for free!</p
+></div>
+<div class="slide">
+<h1
+>Lazyness</h1
+><p
+>This is efficient:</p
+><pre class="sourceCode haskell"
+><code
+  >addLineNumbers :: <span class="dt"
+    >String</span
+    > -&gt; <span class="dt"
+    >String</span
+    ><br
+     />addLineNumbers <span class="fu"
+    >=</span
+    > <span class="fu"
+    >unlines</span
+    > <span class="fu"
+    >.</span
+    > <span class="fu"
+    >zipWith</span
+    > (<span class="fu"
+    >++</span
+    >) numbers <span class="fu"
+    >.</span
+    > <span class="fu"
+    >lines</span
+    ><br
+     />  <span class="kw"
+    >where</span
+    > numbers <span class="fu"
+    >=</span
+    > [<span class="fu"
+    >show</span
+    > i <span class="fu"
+    >++</span
+    > <span class="st"
+    >&quot;:&quot;</span
+    > <span class="fu"
+    >|</span
+    > i &lt;- [<span class="dv"
+    >1</span
+    >,<span class="dv"
+    >2</span
+    ><span class="fu"
+    >..</span
+    >]]<br
+     /><span class="co"
+    >-- lines :: String -&gt; [String]</span
+    ><br
+     /><span class="co"
+    >-- map :: (a -&gt; b) -&gt; [a] -&gt; [b]</span
+    ><br
+     /><span class="co"
+    >-- unlines :: [String] -&gt; String</span
+    ><br
+     /><br
+     />addLineNumbersMain :: <span class="dt"
+    >IO</span
+    > ()<br
+     />addLineNumbersMain <span class="fu"
+    >=</span
+    > <span class="kw"
+    >do</span
+    ><br
+     />    text &lt;- <span class="fu"
+    >getContents</span
+    ><br
+     />    <span class="fu"
+    >putStr</span
+    > (addLineNumbers text)<br
+     /><span class="co"
+    >-- getContents :: IO String</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><p
+>This is efficient:</p
+><pre class="sourceCode haskell"
+><code
+  >nthMin :: (<span class="kw"
+    >Ord</span
+    > a) =&gt; <span class="dt"
+    >Int</span
+    > -&gt; [a] -&gt; a<br
+     />nthMin n <span class="fu"
+    >=</span
+    > <span class="fu"
+    >head</span
+    > <span class="fu"
+    >.</span
+    > <span class="fu"
+    >drop</span
+    > n <span class="fu"
+    >.</span
+    > <span class="fu"
+    >sort</span
+    ><br
+     /><span class="co"
+    >-- drop :: Int -&gt; [a] -&gt; [a]</span
+    ><br
+     /><span class="co"
+    >-- sort :: (Ord a) =&gt; [a] -&gt; [a]</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Cons of lazyness</h1
+><p
+>Laziness opens the door to space leaks.</p
+></div>
+<div class="slide">
+<h1
+>Parallelization, Abstraction, Mathematics</h1
+><p
+>I will show an example that I read at sigfpe's blog at <a href="http://blog.sigfpe.com/"
+  ><code
+    >http://blog.sigfpe.com/</code
+    ></a
+  >, in a post titled &quot;An Approach to Algorithm Parallelization&quot;. He deserves the whole credit.</p
+></div>
+<div class="slide">
+<h1
+>The problem</h1
+><p
+>Given a sequence of numbers that can be ordered, find the largest sum that can be made from a subsequence of that sequence.</p
+><p
+>e.g.</p
+><pre
+><code
+  >[1, 4, -6, 2, -2, 3, 5, 2, -1, 2, -5, 1, -10, 2]
+</code
+  ></pre
+><p
+>The largest sum can be made from the subsequence</p
+><pre
+><code
+  >[3, 5, 2, -1, 2]
+</code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>A solution</h1
+><p
+>We can walk the sequence, keeping an accumulator that is reset to 0 every time it becomes negative, and remembering the largest value it gets.</p
+><p
+>In Haskell:</p
+><pre class="sourceCode haskell"
+><code
+  >solution1 s <span class="fu"
+    >=</span
+    > <span class="fu"
+    >snd</span
+    > (solution1' s (<span class="dv"
+    >0</span
+    >, <span class="dv"
+    >0</span
+    >))<br
+     />solution1' :: (<span class="kw"
+    >Ord</span
+    > t, <span class="kw"
+    >Num</span
+    > t) =&gt; [t] -&gt; (t, t) -&gt; (t, t)<br
+     />solution1' [] (a, m) <span class="fu"
+    >=</span
+    > (a, m)<br
+     />solution1' (x<span class="fu"
+    >:</span
+    >xs) (a, m) <span class="fu"
+    >=</span
+    > solution1' xs (a', m')<br
+     />  <span class="kw"
+    >where</span
+    > a' <span class="fu"
+    >=</span
+    > <span class="fu"
+    >max</span
+    > (a <span class="fu"
+    >+</span
+    > x) <span class="dv"
+    >0</span
+    ><br
+     />        m' <span class="fu"
+    >=</span
+    > <span class="fu"
+    >max</span
+    > a' m<br
+     /><span class="co"
+    >-- snd :: (a, b) -&gt; b</span
+    ><br
+     /><span class="co"
+    >-- max :: (Ord a) =&gt; a -&gt; a -&gt; a</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Running it</h1
+><p
+>It worked on first try.</p
+><pre
+><code
+  >&gt; solution [1, 4, -6, 2, -2, 3, 5, 2, -1, 2, -5, 1, -10, 2]
+11.0
+&gt; solution [-1]
+0.0
+</code
+  ></pre
+><p
+>Looks good.</p
+></div>
+<div class="slide">
+<h1
+>Testing it</h1
+><p
+>QuickCheck is a very powerful testing tool for Haskell code. It lets us specify properties of our code (invariants) and it generates a lot of random data and asserts that the properties hold on the data.</p
+><p
+>If it finds data for which the properties do not hold, it tries to simplify it to get the shortest input that makes our code fail.</p
+><p
+>The types of data to generate, of course, are inferred from the code.</p
+></div>
+<div class="slide">
+<h1
+>Some tests</h1
+><pre class="sourceCode haskell"
+><code
+  >isCorrectForOneItem solution x <span class="fu"
+    >=</span
+    > solution [x] <span class="fu"
+    >==</span
+    > <span class="fu"
+    >max</span
+    > <span class="dv"
+    >0</span
+    > x<br
+     />isZeroForNegativeSequence solution s <span class="fu"
+    >=</span
+    > solution s' <span class="fu"
+    >=~=</span
+    > <span class="dv"
+    >0</span
+    ><br
+     />  <span class="kw"
+    >where</span
+    > s' <span class="fu"
+    >=</span
+    > <span class="fu"
+    >map</span
+    > (<span class="fu"
+    >negate</span
+    > <span class="fu"
+    >.</span
+    > <span class="fu"
+    >abs</span
+    >) s<br
+     />isSumForPositiveSequence solution s <span class="fu"
+    >=</span
+    > solution s' <span class="fu"
+    >=~=</span
+    > <span class="fu"
+    >sum</span
+    > s'<br
+     />  <span class="kw"
+    >where</span
+    > s' <span class="fu"
+    >=</span
+    > <span class="fu"
+    >map</span
+    > <span class="fu"
+    >abs</span
+    > s<br
+     />isAtLeastMax solution s <span class="fu"
+    >=</span
+    > s <span class="fu"
+    >/=</span
+    > [] <span class="fu"
+    >==&gt;</span
+    > solution s <span class="fu"
+    >&gt;=</span
+    > <span class="fu"
+    >maximum</span
+    > s<br
+     />growsUnderConcatenation solution s1 s2 <span class="fu"
+    >=</span
+    ><br
+     />  solution (s1 <span class="fu"
+    >++</span
+    > s2) <span class="fu"
+    >&gt;=~</span
+    > <span class="fu"
+    >max</span
+    > (solution s1) (solution s2)<br
+     /><br
+     />(<span class="fu"
+    >=~=</span
+    >), (&gt;=~) :: <span class="dt"
+    >Double</span
+    > -&gt; <span class="dt"
+    >Double</span
+    > -&gt; <span class="dt"
+    >Bool</span
+    ><br
+     />a <span class="fu"
+    >=~=</span
+    > b <span class="fu"
+    >=</span
+    > <span class="fu"
+    >abs</span
+    > (b<span class="fu"
+    >-</span
+    >a) <span class="fu"
+    >&lt;</span
+    > <span class="dv"
+    >0</span
+    ><span class="fu"
+    >.</span
+    ><span class="dv"
+    >001</span
+    ><br
+     />a <span class="fu"
+    >&gt;=~</span
+    > b <span class="fu"
+    >=</span
+    > b <span class="fu"
+    >-</span
+    > a <span class="fu"
+    >&lt;</span
+    > <span class="dv"
+    >0</span
+    ><span class="fu"
+    >.</span
+    ><span class="dv"
+    >001</span
+    ><br
+     /><br
+     /><span class="co"
+    >-- abs, negate :: (Num a) =&gt; a -&gt; a</span
+    ><br
+     /><span class="co"
+    >-- sum :: (Num a) =&gt; [a] -&gt; a</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Running the tests</h1
+><p
+>All the tests accepted a solution function as an argument, because we will want to test our different solutions.</p
+><pre class="sourceCode haskell"
+><code
+  >test solution <span class="fu"
+    >=</span
+    > <span class="kw"
+    >do</span
+    ><br
+     />  <span class="kw"
+    >let</span
+    > q t <span class="fu"
+    >=</span
+    > quickCheck (t solution)<br
+     />  q isCorrectForOneItem<br
+     />  q isSumForPositiveSequence<br
+     />  q isZeroForNegativeSequence<br
+     />  q isAtLeastMax<br
+     />  q growsUnderConcatenation<br
+     /><br
+     />test1 <span class="fu"
+    >=</span
+    > test solution1<br
+     /></code
+  ></pre
+><p
+>They all succeed on first try!</p
+></div>
+<div class="slide">
+<h1
+>Parallelizing it</h1
+><p
+>This looks more problematic. We keep a running counter, and it is very dependent on previous values.</p
+><pre
+><code
+  >solution' [] (a, m) = (a, m)
+solution' (x:xs) (a, m) = solution' xs (a', m')
+  where a' = max (a + x) 0
+        m' = max a' m
+</code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>The weird step</h1
+><p
+>Lets try to solve a simpler problem. We will replce max with addition and addition with multiplication.</p
+><p
+>0 is the identity for addition so it should be replaced with 1, the identity for multiplication.</p
+><pre class="sourceCode haskell"
+><code
+  >solution2 s <span class="fu"
+    >=</span
+    > m<br
+     />  <span class="kw"
+    >where</span
+    > (_, m) <span class="fu"
+    >=</span
+    > solution2' s (<span class="dv"
+    >1</span
+    >, <span class="dv"
+    >1</span
+    >)<br
+     />solution2' [] (a, m) <span class="fu"
+    >=</span
+    > (a, m)<br
+     />solution2' (x<span class="fu"
+    >:</span
+    >xs) (a, m) <span class="fu"
+    >=</span
+    > solution2' xs (a', m')<br
+     />  <span class="kw"
+    >where</span
+    > a' <span class="fu"
+    >=</span
+    > (a <span class="fu"
+    >*</span
+    > x) <span class="fu"
+    >+</span
+    > <span class="dv"
+    >1</span
+    ><br
+     />        m' <span class="fu"
+    >=</span
+    > a' <span class="fu"
+    >+</span
+    > m<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Why did we do this?</h1
+><p
+>Because solution2' now looks very close to being linear, and linear functions are easy to parallelize.</p
+><p
+>Lets ignore the fact that it solves the wrong problem for now.</p
+><p
+>That &quot;1&quot; iterfers with the linearity we want. Lets replace it with a parameter on which the function will be linear.</p
+><pre class="sourceCode haskell"
+><code
+  >solution3 s <span class="fu"
+    >=</span
+    > m<br
+     />  <span class="kw"
+    >where</span
+    > (_, m, _) <span class="fu"
+    >=</span
+    > solution3' s (<span class="dv"
+    >1</span
+    >, <span class="dv"
+    >1</span
+    >, <span class="dv"
+    >1</span
+    >)<br
+     />solution3' [] (a, m, i) <span class="fu"
+    >=</span
+    > (a, m, i)<br
+     />solution3' (x<span class="fu"
+    >:</span
+    >xs) (a, m, i) <span class="fu"
+    >=</span
+    > solution3' xs (a', m', i)<br
+     />  <span class="kw"
+    >where</span
+    > a' <span class="fu"
+    >=</span
+    > (a <span class="fu"
+    >*</span
+    > x) <span class="fu"
+    >+</span
+    > i<br
+     />        m' <span class="fu"
+    >=</span
+    > a' <span class="fu"
+    >+</span
+    > m<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Linear functions</h1
+><p
+>What can we do now? We can calculate (solution3' sequence) on any vector by way of how it acts on base vectors:</p
+><p
+>Calling <code
+  >solution3' s</code
+  > <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mi>s</mi></msub></mrow></math>, we can show:</p
+><p
+><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mi>s</mi></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mi>a</mi></mtd></mtr><mtr><mtd><mi>m</mi></mtd></mtr><mtr><mtd><mi>i</mi></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo>=</mo><mi>a</mi><mo>&#8901;</mo><msub><mi>f</mi><mi>s</mi></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo>+</mo><mi>m</mi><mo>&#8901;</mo><msub><mi>f</mi><mi>s</mi></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo>+</mo><mi>i</mi><mo>&#8901;</mo><msub><mi>f</mi><mi>s</mi></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow></mrow></math></p
+><p
+>The cool thing is, this <em
+  >is</em
+  > paralellizable.</p
+></div>
+<div class="slide">
+<h1
+>The <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mo stretchy="false">[</mo><mo stretchy="false">]</mo></mrow></math> case</h1
+><p
+><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mrow><mo stretchy="false">[</mo><mo stretchy="false">]</mo></mrow></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mi>a</mi></mtd></mtr><mtr><mtd><mi>m</mi></mtd></mtr><mtr><mtd><mi>i</mi></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mi>a</mi></mtd></mtr><mtr><mtd><mi>m</mi></mtd></mtr><mtr><mtd><mi>i</mi></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow></mrow></math></p
+><p
+><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mrow><mo stretchy="false">[</mo><mo stretchy="false">]</mo></mrow></msub></mrow></math> is the identity function over 3-vectors, and so vector linearity implies <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mrow><mo stretchy="false">[</mo><mo stretchy="false">]</mo></mrow></msub></mrow></math>'s linearity.</p
+></div>
+<div class="slide">
+<h1
+>The <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mo stretchy="false">(</mo><mi>x</mi><mo>:</mo><mi>x</mi><mi>s</mi><mo stretchy="false">)</mo></mrow></math> case</h1
+><p
+><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mrow><mi>x</mi><mo>:</mo><mi>x</mi><mi>s</mi></mrow></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mi>a</mi></mtd></mtr><mtr><mtd><mi>m</mi></mtd></mtr><mtr><mtd><mi>i</mi></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo>=</mo><msub><mi>f</mi><mrow><mi>x</mi><mi>s</mi></mrow></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mi>a</mi><mi>x</mi><mo>+</mo><mi>i</mi></mtd></mtr><mtr><mtd><mi>a</mi><mi>x</mi><mo>+</mo><mi>i</mi><mo>+</mo><mi>m</mi></mtd></mtr><mtr><mtd><mi>i</mi></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow></mrow></math></p
+><p
+><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mrow><mi>x</mi><mo>:</mo><mi>x</mi><mi>s</mi></mrow></msub><mrow><mo stretchy="true">(</mo><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><msub><mi>a</mi><mn>1</mn></msub></mtd></mtr><mtr><mtd><msub><mi>m</mi><mn>1</mn></msub></mtd></mtr><mtr><mtd><msub><mi>i</mi><mn>1</mn></msub></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo>+</mo><mo>&#945;</mo><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><msub><mi>a</mi><mn>2</mn></msub></mtd></mtr><mtr><mtd><msub><mi>m</mi><mn>2</mn></msub></mtd></mtr><mtr><mtd><msub><mi>i</mi><mn>2</mn></msub></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo stretchy="true">)</mo></mrow><mo>=</mo><msub><mi>f</mi><mrow><mi>x</mi><mo>:</mo><mi>x</mi><mi>s</mi></mrow></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><msub><mi>a</mi><mn>1</mn></msub><mo>+</mo><mo>&#945;</mo><msub><mi>a</mi><mn>2</mn></msub></mtd></mtr><mtr><mtd><msub><mi>m</mi><mn>1</mn></msub><mo>+</mo><mo>&#945;</mo><msub><mi>m</mi><mn>2</mn></msub></mtd></mtr><mtr><mtd><msub><mi>i</mi><mn>1</mn></msub><mo>+</mo><mo>&#945;</mo><msub><mi>i</mi><mn>2</mn></msub></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo>=</mo></mrow></math></p
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><p
+><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mo>.</mo><mo>.</mo><mo>.</mo><mo>=</mo><msub><mi>f</mi><mrow><mi>x</mi><mi>s</mi></mrow></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mo stretchy="false">(</mo><msub><mi>a</mi><mn>1</mn></msub><mo>+</mo><mo>&#945;</mo><msub><mi>a</mi><mn>2</mn></msub><mo stretchy="false">)</mo><mi>x</mi><mo>+</mo><mo stretchy="false">(</mo><msub><mi>i</mi><mn>1</mn></msub><mo>+</mo><mo>&#945;</mo><msub><mi>i</mi><mn>2</mn></msub><mo stretchy="false">)</mo></mtd></mtr><mtr><mtd><mo stretchy="false">(</mo><mo stretchy="false">(</mo><msub><mi>a</mi><mn>1</mn></msub><mo>+</mo><mo>&#945;</mo><msub><mi>a</mi><mn>2</mn></msub><mo stretchy="false">)</mo><mi>x</mi><mo>+</mo><mo stretchy="false">(</mo><msub><mi>i</mi><mn>1</mn></msub><mo>+</mo><mo>&#945;</mo><msub><mi>i</mi><mn>2</mn></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>+</mo><mo stretchy="false">(</mo><msub><mi>m</mi><mn>1</mn></msub><mo>+</mo><mo>&#945;</mo><msub><mi>m</mi><mn>2</mn></msub><mo stretchy="false">)</mo></mtd></mtr><mtr><mtd><msub><mi>i</mi><mn>1</mn></msub><mo>+</mo><mo>&#945;</mo><msub><mi>i</mi><mn>2</mn></msub></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo>=</mo></mrow></math></p
+><p
+><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mrow><mi>x</mi><mi>s</mi></mrow></msub><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><msub><mi>a</mi><mn>1</mn></msub><mi>x</mi><mo>+</mo><msub><mi>i</mi><mn>1</mn></msub></mtd></mtr><mtr><mtd><msub><mi>a</mi><mn>1</mn></msub><mi>x</mi><mo>+</mo><msub><mi>i</mi><mn>1</mn></msub><mo>+</mo><msub><mi>m</mi><mn>1</mn></msub></mtd></mtr><mtr><mtd><msub><mi>i</mi><mn>1</mn></msub></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow><mo>+</mo><mo>&#945;</mo><mrow><mo stretchy="true">(</mo><mtable><mtr><mtd><msub><mi>a</mi><mn>2</mn></msub><mi>x</mi><mo>+</mo><msub><mi>i</mi><mn>2</mn></msub></mtd></mtr><mtr><mtd><msub><mi>a</mi><mn>2</mn></msub><mi>x</mi><mo>+</mo><msub><mi>i</mi><mn>2</mn></msub><mo>+</mo><msub><mi>m</mi><mn>2</mn></msub></mtd></mtr><mtr><mtd><msub><mi>i</mi><mn>2</mn></msub></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow></mtd></mtr></mtable><mo stretchy="true">)</mo></mrow></mrow></math></p
+><p
+>So <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mrow><mi>x</mi><mo>:</mo><mi>x</mi><mi>s</mi></mrow></msub></mrow></math> is linear if <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>f</mi><mrow><mi>x</mi><mi>s</mi></mrow></msub></mrow></math> is linear, and we finish by induction on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi>x</mi><mi>s</mi></mrow></math>.</p
+></div>
+<div class="slide">
+<h1
+>Linear algebra</h1
+><p
+>Now we'll need some code for working with vectors and matrices.</p
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >type</span
+    > <span class="dt"
+    >Vector</span
+    > t <span class="fu"
+    >=</span
+    > (t, t, t)<br
+     /><br
+     />e1, e2, e3 :: (<span class="kw"
+    >Num</span
+    > a) =&gt; <span class="dt"
+    >Vector</span
+    > a<br
+     />e1 <span class="fu"
+    >=</span
+    > (<span class="dv"
+    >1</span
+    >,<span class="dv"
+    >0</span
+    >,<span class="dv"
+    >0</span
+    >)<br
+     />e2 <span class="fu"
+    >=</span
+    > (<span class="dv"
+    >0</span
+    >,<span class="dv"
+    >1</span
+    >,<span class="dv"
+    >0</span
+    >)<br
+     />e3 <span class="fu"
+    >=</span
+    > (<span class="dv"
+    >0</span
+    >,<span class="dv"
+    >0</span
+    >,<span class="dv"
+    >1</span
+    >)<br
+     /><br
+     />(.+) :: (<span class="kw"
+    >Num</span
+    > t) =&gt; <span class="dt"
+    >Vector</span
+    > t -&gt; <span class="dt"
+    >Vector</span
+    > t -&gt; <span class="dt"
+    >Vector</span
+    > t<br
+     />(a, b, c) <span class="fu"
+    >.+</span
+    > (d, e, f) <span class="fu"
+    >=</span
+    > (a<span class="fu"
+    >+</span
+    >d, b<span class="fu"
+    >+</span
+    >e, c<span class="fu"
+    >+</span
+    >f)<br
+     /><br
+     />(.*) :: (<span class="kw"
+    >Num</span
+    > t) =&gt; t -&gt; <span class="dt"
+    >Vector</span
+    > t -&gt; <span class="dt"
+    >Vector</span
+    > t<br
+     />a <span class="fu"
+    >.*</span
+    > (b, c, d) <span class="fu"
+    >=</span
+    > (a<span class="fu"
+    >*</span
+    >b, a<span class="fu"
+    >*</span
+    >c, a<span class="fu"
+    >*</span
+    >d)<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >type</span
+    > <span class="dt"
+    >Matrix</span
+    > t <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Vector</span
+    > (<span class="dt"
+    >Vector</span
+    > t)<br
+     /><br
+     />matrix :: (<span class="kw"
+    >Num</span
+    > t) =&gt; (<span class="dt"
+    >Vector</span
+    > t -&gt; <span class="dt"
+    >Vector</span
+    > t) -&gt; <span class="dt"
+    >Matrix</span
+    > t<br
+     />matrix f <span class="fu"
+    >=</span
+    > (f e1, f e2, f e3)<br
+     /><br
+     />(.*.) :: (<span class="kw"
+    >Num</span
+    > t) =&gt; <span class="dt"
+    >Matrix</span
+    > t -&gt; <span class="dt"
+    >Vector</span
+    > t -&gt; <span class="dt"
+    >Vector</span
+    > t<br
+     />(u, v, w) <span class="fu"
+    >.*.</span
+    > (a, b, c) <span class="fu"
+    >=</span
+    > (a <span class="fu"
+    >.*</span
+    > u) <span class="fu"
+    >.+</span
+    > (b <span class="fu"
+    >.*</span
+    > v) <span class="fu"
+    >.+</span
+    > (c <span class="fu"
+    >.*</span
+    > w)<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Applying</h1
+><pre class="sourceCode haskell"
+><code
+  >solution4 s <span class="fu"
+    >=</span
+    > m<br
+     />  <span class="kw"
+    >where</span
+    > (_, m, _) <span class="fu"
+    >=</span
+    > mat <span class="fu"
+    >.*.</span
+    > (<span class="dv"
+    >1</span
+    >, <span class="dv"
+    >1</span
+    >, <span class="dv"
+    >1</span
+    >)<br
+     />        mat <span class="fu"
+    >=</span
+    > matrix (solution3' s)<br
+     /></code
+  ></pre
+><p
+>Notice that most of the work is done in calculating <code
+  >mat</code
+  >, before we even get to (1, 1, 1)! And we can parallelize it:</p
+><p
+><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi>m</mi><mi>a</mi><mi>t</mi><mi>r</mi><mi>i</mi><mi>x</mi><mrow><mo stretchy="true">(</mo><msub><mi>f</mi><mrow><mi>x</mi><mo>:</mo><mi>x</mi><mi>s</mi></mrow></msub><mo stretchy="true">)</mo></mrow><mo>=</mo><mi>m</mi><mi>a</mi><mi>t</mi><mi>r</mi><mi>i</mi><mi>x</mi><mrow><mo stretchy="true">(</mo><msub><mi>f</mi><mrow><mi>x</mi><mi>s</mi></mrow></msub><mo stretchy="true">)</mo></mrow><mo>&#8901;</mo><mi>m</mi><mi>a</mi><mi>t</mi><mi>r</mi><mi>i</mi><mi>x</mi><mrow><mo stretchy="true">(</mo><msub><mi>f</mi><mrow><mo stretchy="false">[</mo><mi>x</mi><mo stretchy="false">]</mo></mrow></msub><mo stretchy="true">)</mo></mrow></mrow></math></p
+><p
+>and therefore:</p
+><p
+><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi>m</mi><mi>a</mi><mi>t</mi><mi>r</mi><mi>i</mi><mi>x</mi><mrow><mo stretchy="true">(</mo><msub><mi>f</mi><mrow><mi>c</mi><mi>o</mi><mi>n</mi><mi>c</mi><mi>a</mi><mi>t</mi><mo stretchy="false">(</mo><mi>x</mi><mi>s</mi><mo>,</mo><mi>y</mi><mi>s</mi><mo stretchy="false">)</mo></mrow></msub><mo stretchy="true">)</mo></mrow><mo>=</mo><mi>m</mi><mi>a</mi><mi>t</mi><mi>r</mi><mi>i</mi><mi>x</mi><mrow><mo stretchy="true">(</mo><msub><mi>f</mi><mrow><mi>y</mi><mi>s</mi></mrow></msub><mo stretchy="true">)</mo></mrow><mo>&#8901;</mo><mi>m</mi><mi>a</mi><mi>t</mi><mi>r</mi><mi>i</mi><mi>x</mi><mrow><mo stretchy="true">(</mo><msub><mi>f</mi><mrow><mi>x</mi><mi>s</mi></mrow></msub><mo stretchy="true">)</mo></mrow></mrow></math></p
+></div>
+<div class="slide">
+<h1
+>In code</h1
+><pre class="sourceCode haskell"
+><code
+  >solution5 s <span class="fu"
+    >=</span
+    > m<br
+     />  <span class="kw"
+    >where</span
+    > (_, m, _) <span class="fu"
+    >=</span
+    > apply (<span class="fu"
+    >reverse</span
+    > matrices) (<span class="dv"
+    >1</span
+    >, <span class="dv"
+    >1</span
+    >, <span class="dv"
+    >1</span
+    >)<br
+     />        apply [] x0 <span class="fu"
+    >=</span
+    > x0<br
+     />        apply (mat <span class="fu"
+    >:</span
+    > rest) x0 <span class="fu"
+    >=</span
+    > mat <span class="fu"
+    >.*.</span
+    > apply rest x0<br
+     />        pieces <span class="fu"
+    >=</span
+    > chop <span class="dv"
+    >10</span
+    > s<br
+     />        matrices <span class="fu"
+    >=</span
+    > <span class="fu"
+    >map</span
+    > (matrix <span class="fu"
+    >.</span
+    > solution3') pieces<br
+     /><span class="co"
+    >-- reverse :: [a] -&gt; [a]</span
+    ><br
+     /><br
+     />chop :: <span class="dt"
+    >Int</span
+    > -&gt; [a] -&gt; [[a]]<br
+     />chop n [] <span class="fu"
+    >=</span
+    > []<br
+     />chop n l <span class="fu"
+    >=</span
+    > hs <span class="fu"
+    >:</span
+    > chop n ts<br
+     />  <span class="kw"
+    >where</span
+    > (hs, ts) <span class="fu"
+    >=</span
+    > <span class="fu"
+    >splitAt</span
+    > n l<br
+     /><span class="co"
+    >-- splitAt :: Int -&gt; [a] -&gt; ([a], [a])</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>And back to the problem</h1
+><p
+>We only used properties of addition and multiplication that hold over any semiring - and specifically, over the semiring of real numbers with (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mo>+</mo></mrow></math>) as operators.</p
+><p
+>So our solution is valid to our original problem, we only need to translate the structures</p
+></div>
+<div class="slide">
+<h1
+>Translating</h1
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >newtype</span
+    > <span class="dt"
+    >MaxPlus</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >MP</span
+    > <span class="dt"
+    >Double</span
+    > <span class="kw"
+    >deriving</span
+    > (<span class="kw"
+    >Eq</span
+    >, <span class="kw"
+    >Show</span
+    >)<br
+     /><span class="kw"
+    >instance</span
+    > <span class="kw"
+    >Num</span
+    > <span class="dt"
+    >MaxPlus</span
+    > <span class="kw"
+    >where</span
+    ><br
+     />  <span class="dt"
+    >MP</span
+    > a <span class="fu"
+    >+</span
+    > <span class="dt"
+    >MP</span
+    > b <span class="fu"
+    >=</span
+    > <span class="dt"
+    >MP</span
+    > (<span class="fu"
+    >max</span
+    > a b)<br
+     />  <span class="dt"
+    >MP</span
+    > a <span class="fu"
+    >*</span
+    > <span class="dt"
+    >MP</span
+    > b <span class="fu"
+    >=</span
+    > <span class="dt"
+    >MP</span
+    > (a <span class="fu"
+    >+</span
+    > b)<br
+     />  <span class="fu"
+    >negate</span
+    > (<span class="dt"
+    >MP</span
+    > a) <span class="fu"
+    >=</span
+    > <span class="dt"
+    >MP</span
+    > (<span class="fu"
+    >negate</span
+    > a)<br
+     />  <span class="fu"
+    >abs</span
+    > (<span class="dt"
+    >MP</span
+    > a) <span class="fu"
+    >=</span
+    > <span class="dt"
+    >MP</span
+    > (<span class="fu"
+    >abs</span
+    > a)<br
+     />  <span class="fu"
+    >signum</span
+    > _ <span class="fu"
+    >=</span
+    > <span class="fu"
+    >error</span
+    > <span class="st"
+    >&quot;no signum&quot;</span
+    ><br
+     />  <span class="fu"
+    >fromInteger</span
+    > <span class="dv"
+    >0</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >MP</span
+    > (<span class="fu"
+    >-</span
+    ><span class="dv"
+    >1</span
+    ><span class="fu"
+    >/</span
+    ><span class="dv"
+    >0</span
+    >) <span class="co"
+    >-- used by e1, e2, e3</span
+    ><br
+     />  <span class="fu"
+    >fromInteger</span
+    > <span class="dv"
+    >1</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >MP</span
+    > <span class="dv"
+    >0</span
+    ><span class="fu"
+    >.</span
+    ><span class="dv"
+    >0</span
+    ><br
+     />  <span class="fu"
+    >fromInteger</span
+    > _ <span class="fu"
+    >=</span
+    > <span class="fu"
+    >error</span
+    > <span class="st"
+    >&quot;no general conversion from integer&quot;</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Were our solutions correct?</h1
+><pre class="sourceCode haskell"
+><code
+  >mpwrap :: ([<span class="dt"
+    >MaxPlus</span
+    >] -&gt; <span class="dt"
+    >MaxPlus</span
+    >) -&gt; [<span class="dt"
+    >Double</span
+    >] -&gt; <span class="dt"
+    >Double</span
+    ><br
+     />mpwrap solution <span class="fu"
+    >=</span
+    > unpack <span class="fu"
+    >.</span
+    > solution <span class="fu"
+    >.</span
+    > <span class="fu"
+    >map</span
+    > <span class="dt"
+    >MP</span
+    ><br
+     />  <span class="kw"
+    >where</span
+    > unpack (<span class="dt"
+    >MP</span
+    > x) <span class="fu"
+    >=</span
+    > x<br
+     /><br
+     />mptest <span class="fu"
+    >=</span
+    > test <span class="fu"
+    >.</span
+    > mpwrap<br
+     />test2 <span class="fu"
+    >=</span
+    > mptest solution2<br
+     />test3 <span class="fu"
+    >=</span
+    > mptest solution3<br
+     />test4 <span class="fu"
+    >=</span
+    > mptest solution4<br
+     />test5 <span class="fu"
+    >=</span
+    > mptest solution5<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Running...</h1
+><p
+><code
+  >test2</code
+  > through <code
+  >test4</code
+  > gave <code
+  >+++ OK, passed 100 tests.</code
+  ></p
+><pre
+><code
+  >*Presentation&gt; test5
++++ OK, passed 100 tests.
++++ OK, passed 100 tests.
++++ OK, passed 100 tests.
++++ OK, passed 100 tests.
+*** Failed! Falsifiable (after 17 tests and 20 shrinks):     
+[-32.0]
+[0.0,20.0,31.0,3.0,23.0,14.0,0.0,3.0,11.0,46.0]
+</code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Debugging</h1
+><pre
+><code
+  >*Presentation&gt; (mpwrap solution5) [0.0,20.0,31.0,3.0,23.0,
+                                   14.0,0.0,3.0,11.0,46.0]
+151.0
+*Presentation&gt; (mpwrap solution5) [-32.0, 0.0,20.0,31.0,3.0,
+                                   23.0,14.0,0.0,3.0,11.0,46.0]
+119.0
+</code
+  ></pre
+><p
+>This occurs right when chopping kicks in. <code
+  >chop</code
+  > is not the culprit (tested quickly with <code
+  >quickCheck (\l-&gt; concat (chop 10 l) == l)</code
+  >).</p
+><p
+>Looking at the relevant area of the code... Ah! I forgot to reverse the matrixes.</p
+></div>
+<div class="slide">
+<h1
+>Running again</h1
+><pre
+><code
+  >*Presentation&gt; test5
++++ OK, passed 100 tests.
++++ OK, passed 100 tests.
++++ OK, passed 100 tests.
++++ OK, passed 100 tests.
++++ OK, passed 100 tests.
+</code
+  ></pre
+><p
+>Win!</p
+></div>
+<div class="slide">
+<h1
+>Real World Use</h1
+><ul
+><li
+  ><p
+    >Haskell is not C++</p
+    ></li
+  ><li
+  ><p
+    >It is used mainly in academy, for both language research and algorithmic reseach</p
+    ></li
+  ><li
+  ><p
+    >There is some Industry use and some Open Source use</p
+    ></li
+  ></ul
+></div>
+<div class="slide">
+<h1
+>Haskell in Open Source</h1
+><p
+>The XMonad tiling window manager is written in Haskell. I use it (since long before I had an interest in the language). It is ~1000 lines of Haskell. It does the job great, is very simple, very customizable and I've never encountered a bug.</p
+><p
+>Haskell has been used a lot for compiler construction - and not only of the dogfood variety. For example, the PUGS perl6 compiler (which used to be the only interesting one for a long while, but has fallen to inactivity) is written in Haskell.</p
+><p
+>Among other notable Haskell open source projects are <code
+  >frag</code
+  >, a Quake clone, and <code
+  >darcs</code
+  >, a distributed source control system.</p
+></div>
+<div class="slide">
+<h1
+>Haskell in Industry</h1
+><p
+><em
+  >Galois Inc.</em
+  > are a company that provides software with correctness proofs. They do private and U.S. government work. The most interesting project I've seen come out of their doors is the <em
+  >Cryptol</em
+  > programming language:</p
+><p
+>&quot;Cryptol is a language for writing specifications for cryptographic algorithms. It is also a tool set for producing high-assurance, efficient implementations in VHDL, C, and Haskell. The Cryptol tools include the ability to equivalence check the reference specification against an implementation, whether or not it was compiled from the specifications.&quot;</p
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><p
+><em
+  >Bluespec, Inc</em
+  > provide a language for hardware design based on functional programming ideas. Their entire toolset is written in Haskell.</p
+><p
+>Founded 2003, it counts among its clients Panasonic, Fujitsu and Mercury.</p
+></div>
+<div class="slide">
+<h1
+>(cont'd)</h1
+><p
+>Many Banks and High Frequency Trading companies use Haskell for trading code. Among them: <em
+  >Deutsche Bank Equity Proprietary Trading</em
+  >, <em
+  >Starling Software</em
+  >, <em
+  >Tsuru Capital</em
+  >.</p
+><p
+>Of course, there are a few more users, but they are less interesting.</p
+></div>
+<div class="slide">
+<h1
+>Other functional languages</h1
+><p
+>There are other languages sharing many of Haskell's properties. Among them are found various incarnations of ML (Notably OCaml), Erlang, Clojure, Scala, Coq, ...</p
+><p
+>The reason I have chosen to learn Haskell (and talk about it here) is that it is so strict in its adherence to purity that it forces its users to find the natural pure solution to a problem instead of relying on familiar non-pure solutions, which is both very educational and gives birth to techniques like <em
+  >Functional Reactive Programming</em
+  >.</p
+></div>
+<div class="slide">
+<h1
+>Functional Reactive Programming</h1
+><pre
+><code
+  >simpleGun :: Position2 -&gt; SimpleGun
+simpleGun (Point2 x0 y0) = proc gi -&gt; do
+    (Point2 xd _) &lt;- ptrPos -&lt; gi
+    rec
+        -- Controller
+        let ad = 10 * (xd - x) - 5 * v
+        -- Physics
+        v &lt;- integral -&lt; clampAcc v ad
+        x &lt;- (x0+) ^&lt;&lt; integral -&lt; v
+        fire &lt;- leftButtonPress -&lt; gi
+    returnA -&lt; SimpleGunState {
+        sgsPos = (Point2 x y0),
+        sgsVel = (vector2 v 0),
+        sgsFired = fire
+    }
+</code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Any Questions Up Until Now?</h1
+><p
+>Don't worry, we are not done yet...</p
+></div>
+<div class="slide">
+<h1
+>Let's play a game</h1
+><p
+>We all know Nim.</p
+><ul
+><li
+  ><p
+    >n stacks of matches on a table</p
+    ></li
+  ><li
+  ><p
+    >Each player, in his turn, must remove one or more matches from a single stack</p
+    ></li
+  ><li
+  ><p
+    >If a player cannot, he loses</p
+    ></li
+  ></ul
+></div>
+<div class="slide">
+<h1
+>Data Structure</h1
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >Player</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Player</span
+    > <span class="dt"
+    >String</span
+    > (<span class="dt"
+    >Nim</span
+    > -&gt; <span class="dt"
+    >IO</span
+    > <span class="dt"
+    >Move</span
+    >)<br
+     /><span class="kw"
+    >instance</span
+    > <span class="kw"
+    >Show</span
+    > <span class="dt"
+    >Player</span
+    > <span class="kw"
+    >where</span
+    > <span class="fu"
+    >show</span
+    > (<span class="dt"
+    >Player</span
+    > name _) <span class="fu"
+    >=</span
+    > name<br
+     />getMove (<span class="dt"
+    >Player</span
+    > _ f) <span class="fu"
+    >=</span
+    > f<br
+     /><br
+     /><span class="kw"
+    >data</span
+    > <span class="dt"
+    >Score</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Lose</span
+    > <span class="fu"
+    >|</span
+    > <span class="dt"
+    >NotFinished</span
+    > <span class="fu"
+    >|</span
+    > <span class="dt"
+    >Win</span
+    > <span class="kw"
+    >deriving</span
+    > (<span class="kw"
+    >Eq</span
+    >, <span class="kw"
+    >Ord</span
+    >)<br
+     /><br
+     /><span class="kw"
+    >data</span
+    > <span class="dt"
+    >Nim</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Nim</span
+    > [<span class="dt"
+    >Matches</span
+    >]<br
+     />    <span class="kw"
+    >deriving</span
+    > <span class="kw"
+    >Show</span
+    ><br
+     /><span class="kw"
+    >newtype</span
+    > <span class="dt"
+    >Matches</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Matches</span
+    > <span class="dt"
+    >Int</span
+    > <span class="kw"
+    >deriving</span
+    > (<span class="kw"
+    >Ord</span
+    >, <span class="kw"
+    >Eq</span
+    >, <span class="kw"
+    >Enum</span
+    >, <span class="kw"
+    >Num</span
+    >)<br
+     /><span class="kw"
+    >instance</span
+    > <span class="kw"
+    >Show</span
+    > <span class="dt"
+    >Matches</span
+    > <span class="kw"
+    >where</span
+    ><br
+     />  <span class="fu"
+    >show</span
+    > (<span class="dt"
+    >Matches</span
+    > k) <span class="fu"
+    >=</span
+    > <span class="fu"
+    >show</span
+    > k <span class="fu"
+    >++</span
+    > <span class="st"
+    >&quot; match(es)&quot;</span
+    ><br
+     /><br
+     /><span class="kw"
+    >data</span
+    > <span class="dt"
+    >Move</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Move</span
+    > <span class="dt"
+    >Int</span
+    > <span class="dt"
+    >Matches</span
+    ><br
+     /><span class="kw"
+    >instance</span
+    > <span class="kw"
+    >Show</span
+    > <span class="dt"
+    >Move</span
+    > <span class="kw"
+    >where</span
+    ><br
+     />  <span class="fu"
+    >show</span
+    > (<span class="dt"
+    >Move</span
+    > i (<span class="dt"
+    >Matches</span
+    > k)) <span class="fu"
+    >=</span
+    > <span class="st"
+    >&quot;Remove &quot;</span
+    > <span class="fu"
+    >++</span
+    > <span class="fu"
+    >show</span
+    > k <span class="fu"
+    >++</span
+    ><br
+     />                              <span class="st"
+    >&quot; from stack &quot;</span
+    > <span class="fu"
+    >++</span
+    > <span class="fu"
+    >show</span
+    > (i <span class="fu"
+    >+</span
+    > <span class="dv"
+    >1</span
+    >)<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Rules of the game</h1
+><pre class="sourceCode haskell"
+><code
+  >apply :: <span class="dt"
+    >Move</span
+    > -&gt; <span class="dt"
+    >Nim</span
+    > -&gt; <span class="dt"
+    >Nim</span
+    ><br
+     />apply (<span class="dt"
+    >Move</span
+    > i k) (<span class="dt"
+    >Nim</span
+    > stacks) <span class="fu"
+    >|</span
+    > legal <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Nim</span
+    > (h <span class="fu"
+    >++</span
+    > [s<span class="fu"
+    >-</span
+    >k] <span class="fu"
+    >++</span
+    > t)<br
+     />  <span class="kw"
+    >where</span
+    > (h, (s<span class="fu"
+    >:</span
+    > t)) <span class="fu"
+    >=</span
+    > <span class="fu"
+    >splitAt</span
+    > i stacks<br
+     />        legal <span class="fu"
+    >=</span
+    > k <span class="fu"
+    >&gt;</span
+    > <span class="dv"
+    >0</span
+    > <span class="fu"
+    >&amp;&amp;</span
+    > s <span class="fu"
+    >&gt;=</span
+    > k<br
+     />apply _ _ <span class="fu"
+    >=</span
+    > <span class="fu"
+    >undefined</span
+    ><br
+     /></code
+  ></pre
+><pre class="sourceCode haskell"
+><code
+  >score :: <span class="dt"
+    >Nim</span
+    > -&gt; <span class="dt"
+    >Score</span
+    ><br
+     />score (<span class="dt"
+    >Nim</span
+    > stacks) <span class="fu"
+    >|</span
+    > <span class="fu"
+    >all</span
+    > (<span class="fu"
+    >==</span
+    > <span class="dv"
+    >0</span
+    >) stacks <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Lose</span
+    ><br
+     />score _ <span class="fu"
+    >=</span
+    > <span class="dt"
+    >NotFinished</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Main loop</h1
+><pre class="sourceCode haskell"
+><code
+  >playNim :: <span class="dt"
+    >Player</span
+    > -&gt; <span class="dt"
+    >Player</span
+    > -&gt; <span class="dt"
+    >Nim</span
+    > -&gt; <span class="dt"
+    >IO</span
+    > <span class="dt"
+    >Player</span
+    ><br
+     />playNim p1 p2 nim <span class="fu"
+    >=</span
+    > <span class="kw"
+    >do</span
+    ><br
+     />    <span class="fu"
+    >putStrLn</span
+    > (<span class="fu"
+    >show</span
+    > p1 <span class="fu"
+    >++</span
+    > <span class="st"
+    >&quot;'s turn&quot;</span
+    >)<br
+     />    m &lt;- getMove p1 nim<br
+     />    <span class="fu"
+    >putStrLn</span
+    > (<span class="fu"
+    >show</span
+    > p1 <span class="fu"
+    >++</span
+    > <span class="st"
+    >&quot;'s move is: &quot;</span
+    > <span class="fu"
+    >++</span
+    > <span class="fu"
+    >show</span
+    > m)<br
+     />    <span class="kw"
+    >let</span
+    > nim' <span class="fu"
+    >=</span
+    > apply m nim<br
+     />    <span class="kw"
+    >let</span
+    > result <span class="fu"
+    >=</span
+    > <span class="kw"
+    >if</span
+    > score nim' <span class="fu"
+    >==</span
+    > <span class="dt"
+    >Lose</span
+    > <br
+     />                 <span class="kw"
+    >then</span
+    > <span class="fu"
+    >return</span
+    > p2 <br
+     />                 <span class="kw"
+    >else</span
+    > playNim p2 p1 nim'<br
+     />    result<br
+     /></code
+  ></pre
+><p
+>return :: (Monad m) =&gt; a -&gt; m a instance Monad IO</p
+></div>
+<div class="slide">
+<h1
+>Human player</h1
+><pre class="sourceCode haskell"
+><code
+  >humanMove :: <span class="dt"
+    >Nim</span
+    > -&gt; <span class="dt"
+    >IO</span
+    > <span class="dt"
+    >Move</span
+    ><br
+     />humanMove nim <span class="fu"
+    >=</span
+    > <span class="kw"
+    >do</span
+    ><br
+     />    <span class="fu"
+    >putStrLn</span
+    > (showNim nim)<br
+     />    <span class="fu"
+    >putStrLn</span
+    > <span class="st"
+    >&quot;Choose a stack:&quot;</span
+    ><br
+     />    stack &lt;- <span class="fu"
+    >getLine</span
+    ><br
+     />    <span class="fu"
+    >putStrLn</span
+    > <span class="st"
+    >&quot;Choose amount:&quot;</span
+    ><br
+     />    amount &lt;- <span class="fu"
+    >getLine</span
+    ><br
+     />    <span class="fu"
+    >return</span
+    > (<span class="dt"
+    >Move</span
+    > (<span class="fu"
+    >read</span
+    > stack <span class="fu"
+    >-</span
+    > <span class="dv"
+    >1</span
+    >) (<span class="dt"
+    >Matches</span
+    > (<span class="fu"
+    >read</span
+    > amount)))<br
+     /><br
+     />showNim (<span class="dt"
+    >Nim</span
+    > stacks) <span class="fu"
+    >=</span
+    ><br
+     />  <span class="fu"
+    >unlines</span
+    > [<span class="fu"
+    >show</span
+    > i <span class="fu"
+    >++</span
+    ><span class="st"
+    >&quot;: &quot;</span
+    ><span class="fu"
+    >++</span
+    > <span class="fu"
+    >show</span
+    > k <span class="fu"
+    >|</span
+    > (i, k) &lt;- <span class="fu"
+    >zip</span
+    > [<span class="dv"
+    >1</span
+    ><span class="fu"
+    >..</span
+    >] stacks]<br
+     /><br
+     />human name <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Player</span
+    > name humanMove<br
+     />humanVsHumanNim <span class="fu"
+    >=</span
+    > playNim (human <span class="st"
+    >&quot;Aur&quot;</span
+    >) (human <span class="st"
+    >&quot;Heru&quot;</span
+    >) <br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Runtime bugs I had</h1
+><p
+>When I first ran the code, I found the following bugs:</p
+><ul
+><li
+  ><p
+    >Confused i and k in Move's show</p
+    ></li
+  ><li
+  ><p
+    >Confused i and k in apply</p
+    ></li
+  ></ul
+><p
+>(i and k were both Ints). So I added the newtype Matches.</p
+><ul
+><li
+  ><p
+    >The condition for apply was s &gt; k and not s &gt;= k</p
+    ></li
+  ><li
+  ><p
+    >I derived Read for Matches, so it tried to parse from user input a string like &quot;Matches 1&quot; (solution: read as Int and construct Matches from it myself)</p
+    ></li
+  ></ul
+></div>
+<div class="slide">
+<h1
+>And then it worked!</h1
+><ul
+><li
+  ><p
+    >How many bugs would you have had for a program this size that you run for the first time in C? In Python?</p
+    ></li
+  ><li
+  ><p
+    >I usually have a very high bug count for a programmer</p
+    ></li
+  ><li
+  ><p
+    >All of these bugs were immediately apparent. No edge case chasing</p
+    ></li
+  ><li
+  ><p
+    >I never had a bug again in this area of the code</p
+    ></li
+  ></ul
+></div>
+<div class="slide">
+<h1
+>Computing an optimal move</h1
+><pre class="sourceCode haskell"
+><code
+  >computerMove nim <span class="fu"
+    >=</span
+    > <span class="fu"
+    >return</span
+    > (<span class="fu"
+    >fst</span
+    > (bestMove nim))<br
+     /><br
+     />bestMove nim <span class="fu"
+    >=</span
+    > maximumBy (comparing <span class="fu"
+    >snd</span
+    >) (evaluateAllMoves nim)<br
+     />evaluateAllMoves nim <span class="fu"
+    >=</span
+    > <span class="fu"
+    >map</span
+    > evaluate (legalMoves nim)<br
+     />  <span class="kw"
+    >where</span
+    > evaluate m <span class="fu"
+    >=</span
+    > (m, score' (apply m nim))<br
+     /><br
+     />score' nim <span class="fu"
+    >=</span
+    > <span class="kw"
+    >case</span
+    > score nim <span class="kw"
+    >of</span
+    > <br
+     />  <span class="dt"
+    >Lose</span
+    > -&gt; <span class="dt"
+    >Lose</span
+    ><br
+     />  _ -&gt; negateScore (<span class="fu"
+    >snd</span
+    > (bestMove nim))<br
+     />negateScore <span class="dt"
+    >Win</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Lose</span
+    ><br
+     />negateScore <span class="dt"
+    >Lose</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Win</span
+    ><br
+     /><br
+     />legalMoves :: <span class="dt"
+    >Nim</span
+    > -&gt; [<span class="dt"
+    >Move</span
+    >]<br
+     />legalMoves (<span class="dt"
+    >Nim</span
+    > stacks) <span class="fu"
+    >=</span
+    > <br
+     />   [<span class="dt"
+    >Move</span
+    > i k <span class="fu"
+    >|</span
+    > i &lt;- [<span class="dv"
+    >0</span
+    ><span class="fu"
+    >..</span
+    ><span class="fu"
+    >length</span
+    > stacks <span class="fu"
+    >-</span
+    > <span class="dv"
+    >1</span
+    >],<br
+     />               k &lt;- [<span class="dv"
+    >1</span
+    ><span class="fu"
+    >..</span
+    >stacks <span class="fu"
+    >!!</span
+    > i]]<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Let's play!</h1
+><pre class="sourceCode haskell"
+><code
+  >humanVsComputerNim <span class="fu"
+    >=</span
+    > playNim (human <span class="st"
+    >&quot;Aur&quot;</span
+    >) <br
+     />                             (<span class="dt"
+    >Player</span
+    > <span class="st"
+    >&quot;Oleg&quot;</span
+    > computerMove)<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>First run</h1
+><p
+>Seemed to work! I lost every time I was the losing player or made a mistake</p
+></div>
+<div class="slide">
+<h1
+>Exploring the game</h1
+><p
+>All this IO is very uncomfortable.</p
+><p
+>First, lets write a pure solver.</p
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >PurePlayer</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >PurePlayer</span
+    > <span class="dt"
+    >String</span
+    > (<span class="dt"
+    >Nim</span
+    > -&gt; <span class="dt"
+    >Move</span
+    >)<br
+     /><span class="kw"
+    >instance</span
+    > <span class="kw"
+    >Show</span
+    > <span class="dt"
+    >PurePlayer</span
+    > <span class="kw"
+    >where</span
+    > <span class="fu"
+    >show</span
+    > (<span class="dt"
+    >PurePlayer</span
+    > name _) <span class="fu"
+    >=</span
+    > name<br
+     />pureGetMove (<span class="dt"
+    >PurePlayer</span
+    > _ f) <span class="fu"
+    >=</span
+    > f<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Pure Nim</h1
+><pre class="sourceCode haskell"
+><code
+  >pureComputerMove nim <span class="fu"
+    >=</span
+    > <span class="fu"
+    >fst</span
+    > (bestMove nim)<br
+     /><br
+     />pureNim _ p2 nim <span class="fu"
+    >|</span
+    > score nim <span class="fu"
+    >==</span
+    > <span class="dt"
+    >Lose</span
+    > <span class="fu"
+    >=</span
+    > p2<br
+     />pureNim p1 p2 nim <span class="fu"
+    >=</span
+    ><br
+     />  <span class="kw"
+    >if</span
+    > score nim' <span class="fu"
+    >==</span
+    > <span class="dt"
+    >Lose</span
+    > <br
+     />  <span class="kw"
+    >then</span
+    > p2 <br
+     />  <span class="kw"
+    >else</span
+    > pureNim p2 p1 nim'<br
+     />    <span class="kw"
+    >where</span
+    > m <span class="fu"
+    >=</span
+    > pureGetMove p1 nim<br
+     />          nim' <span class="fu"
+    >=</span
+    > apply m nim<br
+     /><br
+     />computer name <span class="fu"
+    >=</span
+    > <span class="dt"
+    >PurePlayer</span
+    > name pureComputerMove<br
+     />computerNim <span class="fu"
+    >=</span
+    > pureNim (computer <span class="st"
+    >&quot;A&quot;</span
+    >) (computer <span class="st"
+    >&quot;B&quot;</span
+    >)<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>And lets explore!</h1
+><pre class="sourceCode haskell"
+><code
+  >nim2Table n <span class="fu"
+    >=</span
+    ><br
+     />  [[computerNim (<span class="dt"
+    >Nim</span
+    > [i, j]) <span class="fu"
+    >|</span
+    > j &lt;- <span class="fu"
+    >range</span
+    >] <span class="fu"
+    >|</span
+    > i &lt;- <span class="fu"
+    >range</span
+    >]<br
+     />    <span class="kw"
+    >where</span
+    > <span class="fu"
+    >range</span
+    > <span class="fu"
+    >=</span
+    > [<span class="dv"
+    >0</span
+    ><span class="fu"
+    >..</span
+    >n]<br
+     /></code
+  ></pre
+><p
+>nim2Table 4 gives us:</p
+><pre
+><code
+  >[[B,B,A,A,A],
+ [B,A,A,A,A],
+ [A,A,B,A,A],
+ [A,A,A,B,A],
+ [A,A,A,A,B]]
+</code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>But it is so slow...</h1
+><p
+>nim2Table 7 takes 3.42 seconds on my old laptop, but nim2Table 8 takes 30 seconds, and it gets worse. Lets try to optimize a bit.</p
+><p
+>We will try to memoize results of bestMove.</p
+><p
+>To keep the code simple, we will only tackle nim2.</p
+></div>
+<div class="slide">
+<h1
+>Memoizing</h1
+><pre class="sourceCode haskell"
+><code
+  >fastBestMove' (<span class="dt"
+    >Nim</span
+    > [<span class="dt"
+    >Matches</span
+    > a, <span class="dt"
+    >Matches</span
+    > b]) <span class="fu"
+    >=</span
+    > bests <span class="fu"
+    >!!</span
+    > a <span class="fu"
+    >!!</span
+    > b<br
+     />fastBestMove' nim <span class="fu"
+    >=</span
+    > fastBestMove nim<br
+     /><br
+     />bests <span class="fu"
+    >=</span
+    > [[fastBestMove (<span class="dt"
+    >Nim</span
+    > [a, b]) <span class="fu"
+    >|</span
+    > b &lt;- [<span class="dv"
+    >0</span
+    ><span class="fu"
+    >..</span
+    >]] <span class="fu"
+    >|</span
+    > a &lt;- [<span class="dv"
+    >0</span
+    ><span class="fu"
+    >..</span
+    >]]<br
+     /><br
+     />fastBestMove nim <span class="fu"
+    >=</span
+    > maximumBy (comparing <span class="fu"
+    >snd</span
+    >)<br
+     />                             (fastEvaluateAllMoves nim)<br
+     /><br
+     />fastEvaluateAllMoves nim <span class="fu"
+    >=</span
+    > <span class="fu"
+    >map</span
+    > evaluate (legalMoves nim)<br
+     />  <span class="kw"
+    >where</span
+    > evaluate m <span class="fu"
+    >=</span
+    > (m, fastScore' (apply m nim))<br
+     /><br
+     />fastScore' nim <span class="fu"
+    >=</span
+    > <span class="kw"
+    >case</span
+    > score nim <span class="kw"
+    >of</span
+    > <br
+     />  <span class="dt"
+    >Lose</span
+    > -&gt; <span class="dt"
+    >Lose</span
+    ><br
+     />  _ -&gt; negateScore (<span class="fu"
+    >snd</span
+    > (fastBestMove' nim))<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>And let's play!</h1
+><pre class="sourceCode haskell"
+><code
+  >fastComputerMove nim <span class="fu"
+    >=</span
+    > <span class="fu"
+    >fst</span
+    > (fastBestMove' nim)<br
+     />fastComputer name <span class="fu"
+    >=</span
+    > <span class="dt"
+    >PurePlayer</span
+    > name fastComputerMove<br
+     /><br
+     />fastNim <span class="fu"
+    >=</span
+    > pureNim (fastComputer <span class="st"
+    >&quot;A&quot;</span
+    >) (fastComputer <span class="st"
+    >&quot;B&quot;</span
+    >)<br
+     /><br
+     />fastNim2Table n <span class="fu"
+    >=</span
+    ><br
+     />  [[fastNim (<span class="dt"
+    >Nim</span
+    > [i, j]) <span class="fu"
+    >|</span
+    > j &lt;- <span class="fu"
+    >range</span
+    >] <span class="fu"
+    >|</span
+    > i &lt;- <span class="fu"
+    >range</span
+    >]<br
+     />    <span class="kw"
+    >where</span
+    > <span class="fu"
+    >range</span
+    > <span class="fu"
+    >=</span
+    > [<span class="dv"
+    >0</span
+    ><span class="fu"
+    >..</span
+    >n]<br
+     /></code
+  ></pre
+><p
+><em
+  >Success!</em
+  > fastNim2Table 20 executes within the blink of an eye (profiler reports 0.04 seconds)</p
+></div>
+<div class="slide">
+<h1
+>Parallelization</h1
+><p
+>What would it take to parallelize this?</p
+><p
+>Nothing! Just setting a compiler flag!</p
+><p
+>We only know how to do this for functional languages like Haskell.</p
+></div>
+<div class="slide">
+<h1
+>Questions?</h1
+><p
+>This is the end.</p
+></div>
+<div class="slide">
+<h1
+>.</h1
+><p
+>Thank you.</p
+></div>
+</div>
+</body>
+</html>

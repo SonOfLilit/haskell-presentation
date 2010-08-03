@@ -13,7 +13,6 @@ So lets start with some imports, which you can ignore...
 
 > {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 > module Presentation where
-> import qualified List
 > import Data.List
 > import Data.Ord
 > import Test.QuickCheck
@@ -210,9 +209,9 @@ Type Classes
 ============
 
 > maxSucc :: (Ord a) => [a] -> a
-> maxSucc xs = maximum (List.delete (maximum xs) xs)
+> maxSucc xs = maximum (delete (maximum xs) xs)
 > -- maximum :: (Ord a) => [a] -> a
-> -- List.delete :: a -> [a] -> [a]
+> -- delete :: a -> [a] -> [a]
 
 Writing Type Classes
 ====================
