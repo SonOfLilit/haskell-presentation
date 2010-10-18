@@ -64,24 +64,171 @@ in simpler ways than C or Java) and even Shell Scripts (and that's
 something!) with Haskell (I pretty much can't do a thing), I know
 something must have gone terribly wrong!  
 
-Reading Haskell
+Designing Haskell
 ===============
 
-Don't panic!
+We will try to follow Haskell's design from the designer's
+perspective.
 
-Definitions, Type Declarations, IO
-==================================
+Some general points:
 
-> main :: IO ()
-> main = putStrLn "Hello, World!"
+* We will choose math-like syntax whenever possible instead of
+inventing our own
 
-Functions, Lists, Pattern Matching
-==================================
+* We want to achieve semantics which are as clear as possible,
+(because we are mathematicians and) to aid in program correctness
+proofs
 
-> head' :: [a] -> a
-> head' (x : _) = x
-> head' [] = undefined
-> -- undefined :: a
+* We want all data to be persistent (non-mutable), for simpler
+semantics and for good GC
+
+Functions
+=========
+
+We want to be able to define values:
+
+> one = 1
+
+Lambda calculus is a very nice semantics for functions. Let's use it:
+
+> _prev = \x -> x + one
+
+But let's add some syntactic sugar:
+
+> _succ x = x + one
+
+Pattern Matching
+================
+
+Math has great syntax for defining functions with multiple
+cases. Let's use it:
+
+> abs' :: Int -> Int
+> abs' x
+>   | x >= 0 = x
+>   | x < 0 = -x
+
+And what if we want it in the middle of an expression?
+
+> pos x = case x > 0 of
+>    True -> x
+>    _ -> 0
+
+Types
+=====
+
+We want to be able to specify the type of a value:
+
+> one :: Int
+
+What would be the type of a function, then?
+
+> _succ :: Int -> Int
+
+Custom Types - Sums
+===================
+
+How would we represent "Bool"? As a "type sum", a type that could be
+one of a number of options:
+
+> data B = T | F
+
+And how would we use it? Let's use our existing ability to pattern
+match!  
+
+> not' :: B -> B
+> not' F = T
+> not' T = F
+
+Custom Types - Products
+=======================
+
+We want types that combine other types - "type products":
+
+> data NameType = Name String String
+
+> firstName, lastName :: NameType -> String
+> firstName (Name f l) = f
+> lastName (Name f l) = l
+
+Polymorphic Data Types
+======================
+
+We want parameters. Lets agree, for comfort, that anywhere where a
+type is expected, a word that starts with a non-capital letter is a
+parameter:
+
+> data Labeled valueType = Label String valueType
+
+Polymorphic Functions
+=====================
+
+For polymorphic data types to be useful, we need to also have
+polymorphic functions:
+
+> label :: Labeled a -> String
+> label (Label s x) = s
+
+Of course, if we wanted we could specify values for parameters:
+
+> getName :: Labeled NameType -> NameType
+> getName (Label s n) = n
+
+All together now
+================
+
+Lets try our hands at a more interesting example:
+
+> data List a = Empty | Cons a (List a)
+> 
+> head' :: List a -> a
+> head' (Cons x xs) = x
+> head' Empty = undefined
+> 
+> tail' :: List a -> List a
+> tail' (Cons x xs) = xs
+> tail' Empty = undefined
+
+An aside - `undefined`?
+=======================
+
+Mathematically, since Haskell is Turing Complete, and we must
+acommodate for the halting problem, Haskell's semantics must have an
+extra possible value for every expression, meaning "this calculation
+gets stuck in an endless loop". It is called "⊥" and pronounced
+"bottom" (because it is at the bottom of the information hierarchy for
+an expression, or in plainer terms, saying that an expression equals
+bottom doesn't say much).
+
+From semantics to practice
+==========================
+
+Lets define a function that gives a "shortcut to bottom", that we can
+use when we don't want to specify some part of the code yet.
+
+We could implement it:
+
+> undefined' :: a -> a
+> undefined' a = undefined' a
+
+But it is usually implemented to throw a runtime error, for the
+programmer's and user's comfort.
+
+List syntactic sugar
+====================
+
+In a functional language, lists are very important, so let's give them
+some syntactic sugar:
+
+    l :: List Int
+
+> listOfNumbers :: [Int]
+
+    l = (Cons 1 (Cons 1 (Cons 2 ( .. (Cons 13 Empty)))))
+
+> listOfNumbers = [1, 1, 2, 3, 5, 8, 13]  
+
+-- HERE
 
 Composition
 ===========
@@ -186,24 +333,6 @@ f4 = `x__ + y__` = f2 + f3 = 1 + 2 = 3
 
 f4' = `zipWith (+) f2' f3'`
 
-Algebraic Data Types
-====================
-
-> data Labeled a = Label String a
-> label (Label l _) = l
-> value (Label _ v) = v
-
-> data Bool' = False' | True'
->
-> not' :: Bool' -> Bool'
-> not' False' = True'
-> not' True' = False'
-
-> data List a = Empty | a ::: List a
-> 
-> tail' :: List a -> List a
-> tail' (_ ::: xs) = xs
-> tail' Empty = undefined
 
 Type Classes
 ============

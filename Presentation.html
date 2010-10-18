@@ -480,35 +480,454 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
 ></div>
 <div class="slide">
 <h1
->Reading Haskell</h1
+>Designing Haskell</h1
 ><p
->Don't panic!</p
+>We will try to follow Haskell's design from the designer's perspective.</p
+><p
+>Some general points:</p
+><ul
+><li
+  ><p
+    >We will choose math-like syntax whenever possible instead of inventing our own</p
+    ></li
+  ><li
+  ><p
+    >We want to achieve semantics which are as clear as possible, (because we are mathematicians and) to aid in program correctness proofs</p
+    ></li
+  ><li
+  ><p
+    >We want all data to be persistent (non-mutable), for simpler semantics and for good GC</p
+    ></li
+  ></ul
 ></div>
 <div class="slide">
 <h1
->Definitions, Type Declarations, IO</h1
+>Functions</h1
+><p
+>We want to be able to define values:</p
 ><pre class="sourceCode haskell"
 ><code
-  >main :: <span class="dt"
-    >IO</span
-    > ()<br
-     />main <span class="fu"
+  >one <span class="fu"
+    >=</span
+    > <span class="dv"
+    >1</span
+    ><br
+     /></code
+  ></pre
+><p
+>Lambda calculus is a very nice semantics for functions. Let's use it:</p
+><pre class="sourceCode haskell"
+><code
+  >_prev <span class="fu"
+    >=</span
+    > \x -&gt; x <span class="fu"
+    >+</span
+    > one<br
+     /></code
+  ></pre
+><p
+>But let's add some syntactic sugar:</p
+><pre class="sourceCode haskell"
+><code
+  >_succ x <span class="fu"
+    >=</span
+    > x <span class="fu"
+    >+</span
+    > one<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Pattern Matching</h1
+><p
+>Math has great syntax for defining functions with multiple cases. Let's use it:</p
+><pre class="sourceCode haskell"
+><code
+  >abs' :: <span class="dt"
+    >Int</span
+    > -&gt; <span class="dt"
+    >Int</span
+    ><br
+     />abs' x<br
+     />  <span class="fu"
+    >|</span
+    > x <span class="fu"
+    >&gt;=</span
+    > <span class="dv"
+    >0</span
+    > <span class="fu"
+    >=</span
+    > x<br
+     />  <span class="fu"
+    >|</span
+    > x <span class="fu"
+    >&lt;</span
+    > <span class="dv"
+    >0</span
+    > <span class="fu"
     >=</span
     > <span class="fu"
-    >putStrLn</span
-    > <span class="st"
-    >&quot;Hello, World!&quot;</span
+    >-</span
+    >x<br
+     /></code
+  ></pre
+><p
+>And what if we want it in the middle of an expression?</p
+><pre class="sourceCode haskell"
+><code
+  >pos x <span class="fu"
+    >=</span
+    > <span class="kw"
+    >case</span
+    > x <span class="fu"
+    >&gt;</span
+    > <span class="dv"
+    >0</span
+    > <span class="kw"
+    >of</span
+    ><br
+     />   <span class="kw"
+    >True</span
+    > -&gt; x<br
+     />   _ -&gt; <span class="dv"
+    >0</span
     ><br
      /></code
   ></pre
 ></div>
 <div class="slide">
 <h1
->Functions, Lists, Pattern Matching</h1
+>Types</h1
+><p
+>We want to be able to specify the type of a value:</p
+><pre class="sourceCode haskell"
+><code
+  >one :: <span class="dt"
+    >Int</span
+    ><br
+     /></code
+  ></pre
+><p
+>What would be the type of a function, then?</p
+><pre class="sourceCode haskell"
+><code
+  >_succ :: <span class="dt"
+    >Int</span
+    > -&gt; <span class="dt"
+    >Int</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Custom Types - Sums</h1
+><p
+>How would we represent &quot;Bool&quot;? As a &quot;type sum&quot;, a type that could be one of a number of options:</p
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >B</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >T</span
+    > <span class="fu"
+    >|</span
+    > <span class="dt"
+    >F</span
+    ><br
+     /></code
+  ></pre
+><p
+>And how would we use it? Let's use our existing ability to pattern match!</p
+><pre class="sourceCode haskell"
+><code
+  >not' :: <span class="dt"
+    >B</span
+    > -&gt; <span class="dt"
+    >B</span
+    ><br
+     />not' <span class="dt"
+    >F</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >T</span
+    ><br
+     />not' <span class="dt"
+    >T</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >F</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Custom Types - Products</h1
+><p
+>We want types that combine other types - &quot;type products&quot;:</p
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >NameType</span
+    > <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Name</span
+    > <span class="dt"
+    >String</span
+    > <span class="dt"
+    >String</span
+    ><br
+     /></code
+  ></pre
+><pre class="sourceCode haskell"
+><code
+  >firstName, lastName :: <span class="dt"
+    >NameType</span
+    > -&gt; <span class="dt"
+    >String</span
+    ><br
+     />firstName (<span class="dt"
+    >Name</span
+    > f l) <span class="fu"
+    >=</span
+    > f<br
+     />lastName (<span class="dt"
+    >Name</span
+    > f l) <span class="fu"
+    >=</span
+    > l<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Polymorphic Data Types</h1
+><p
+>We want parameters. Lets agree, for comfort, that anywhere where a type is expected, a word that starts with a non-capital letter is a parameter:</p
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >Labeled</span
+    > valueType <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Label</span
+    > <span class="dt"
+    >String</span
+    > valueType<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Polymorphic Functions</h1
+><p
+>For polymorphic data types to be useful, we need to also have polymorphic functions:</p
+><pre class="sourceCode haskell"
+><code
+  >label :: <span class="dt"
+    >Labeled</span
+    > a -&gt; <span class="dt"
+    >String</span
+    ><br
+     />label (<span class="dt"
+    >Label</span
+    > s x) <span class="fu"
+    >=</span
+    > s<br
+     /></code
+  ></pre
+><p
+>Of course, if we wanted we could specify values for parameters:</p
+><pre class="sourceCode haskell"
+><code
+  >getName :: <span class="dt"
+    >Labeled</span
+    > <span class="dt"
+    >NameType</span
+    > -&gt; <span class="dt"
+    >NameType</span
+    ><br
+     />getName (<span class="dt"
+    >Label</span
+    > s n) <span class="fu"
+    >=</span
+    > n<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>All together now</h1
+><p
+>Lets try our hands at a more interesting example:</p
+><pre class="sourceCode haskell"
+><code
+  ><span class="kw"
+    >data</span
+    > <span class="dt"
+    >List</span
+    > a <span class="fu"
+    >=</span
+    > <span class="dt"
+    >Empty</span
+    > <span class="fu"
+    >|</span
+    > <span class="dt"
+    >Cons</span
+    > a (<span class="dt"
+    >List</span
+    > a)<br
+     /><br
+     />head' :: <span class="dt"
+    >List</span
+    > a -&gt; a<br
+     />head' (<span class="dt"
+    >Cons</span
+    > x xs) <span class="fu"
+    >=</span
+    > x<br
+     />head' <span class="dt"
+    >Empty</span
+    > <span class="fu"
+    >=</span
+    > <span class="fu"
+    >undefined</span
+    ><br
+     /><br
+     />tail' :: <span class="dt"
+    >List</span
+    > a -&gt; <span class="dt"
+    >List</span
+    > a<br
+     />tail' (<span class="dt"
+    >Cons</span
+    > x xs) <span class="fu"
+    >=</span
+    > xs<br
+     />tail' <span class="dt"
+    >Empty</span
+    > <span class="fu"
+    >=</span
+    > <span class="fu"
+    >undefined</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>An aside - <code
+  >undefined</code
+  >?</h1
+><p
+>Mathematically, since Haskell is Turing Complete, and we must acommodate for the halting problem, Haskell's semantics must have an extra possible value for every expression, meaning &quot;this calculation gets stuck in an endless loop&quot;. It is called &quot;⊥&quot; and pronounced &quot;bottom&quot; (because it is at the bottom of the information hierarchy for an expression, or in plainer terms, saying that an expression equals bottom doesn't say much).</p
+></div>
+<div class="slide">
+<h1
+>From semantics to practice</h1
+><p
+>Lets define a function that gives a &quot;shortcut to bottom&quot;, that we can use when we don't want to specify some part of the code yet.</p
+><p
+>We could implement it:</p
+><pre class="sourceCode haskell"
+><code
+  >undefined' :: a -&gt; a<br
+     />undefined' a <span class="fu"
+    >=</span
+    > undefined' a<br
+     /></code
+  ></pre
+><p
+>But it is usually implemented to throw a runtime error, for the programmer's and user's comfort.</p
+></div>
+<div class="slide">
+<h1
+>List syntactic sugar</h1
+><p
+>In a functional language, lists are very important, so let's give them some syntactic sugar:</p
+><pre
+><code
+  >l :: List Int
+</code
+  ></pre
+><pre class="sourceCode haskell"
+><code
+  >listOfNumbers :: [<span class="dt"
+    >Int</span
+    >]<br
+     /></code
+  ></pre
+><pre
+><code
+  >l = (Cons 1 (Cons 1 (Cons 2 ( .. (Cons 13 Empty)))))
+</code
+  ></pre
+><pre class="sourceCode haskell"
+><code
+  >listOfNumbers <span class="fu"
+    >=</span
+    > [<span class="dv"
+    >1</span
+    >, <span class="dv"
+    >1</span
+    >, <span class="dv"
+    >2</span
+    >, <span class="dv"
+    >3</span
+    >, <span class="dv"
+    >5</span
+    >, <span class="dv"
+    >8</span
+    >, <span class="dv"
+    >13</span
+    >]  <br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Polymorphic Types</h1
+><p
+>What is the type of <code
+  >head</code
+  >?</p
+><pre
+><code
+  >For all types `a`, a function from `a` to a list of `a`
+</code
+  ></pre
+><p
+>We can just write that:</p
 ><pre class="sourceCode haskell"
 ><code
   >head' :: [a] -&gt; a<br
-     />head' (x <span class="fu"
+     /></code
+  ></pre
+><p
+>In types, lets make symbols starting with a non-capital letter variables.</p
+></div>
+<div class="slide">
+<h1
+>Pattern Matching</h1
+><p
+>Now, to implement. Let's steal math's syntax for defining functions with cases:</p
+><pre class="sourceCode haskell"
+><code
+  >head' (x <span class="fu"
     >:</span
     > _) <span class="fu"
     >=</span
@@ -523,6 +942,10 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     ><br
      /></code
   ></pre
+></div>
+<div class="slide">
+<h1
+>Functions, Lists, Pattern Matching</h1
 ></div>
 <div class="slide">
 <h1
@@ -800,109 +1223,6 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
 >f4' = <code
   >zipWith (+) f2' f3'</code
   ></p
-></div>
-<div class="slide">
-<h1
->Algebraic Data Types</h1
-><pre class="sourceCode haskell"
-><code
-  ><span class="kw"
-    >data</span
-    > <span class="dt"
-    >Labeled</span
-    > a <span class="fu"
-    >=</span
-    > <span class="dt"
-    >Label</span
-    > <span class="dt"
-    >String</span
-    > a<br
-     />label (<span class="dt"
-    >Label</span
-    > l _) <span class="fu"
-    >=</span
-    > l<br
-     />value (<span class="dt"
-    >Label</span
-    > _ v) <span class="fu"
-    >=</span
-    > v<br
-     /></code
-  ></pre
-><pre class="sourceCode haskell"
-><code
-  ><span class="kw"
-    >data</span
-    > <span class="dt"
-    >Bool'</span
-    > <span class="fu"
-    >=</span
-    > <span class="dt"
-    >False'</span
-    > <span class="fu"
-    >|</span
-    > <span class="dt"
-    >True'</span
-    ><br
-     /><br
-     />not' :: <span class="dt"
-    >Bool'</span
-    > -&gt; <span class="dt"
-    >Bool'</span
-    ><br
-     />not' <span class="dt"
-    >False'</span
-    > <span class="fu"
-    >=</span
-    > <span class="dt"
-    >True'</span
-    ><br
-     />not' <span class="dt"
-    >True'</span
-    > <span class="fu"
-    >=</span
-    > <span class="dt"
-    >False'</span
-    ><br
-     /></code
-  ></pre
-><pre class="sourceCode haskell"
-><code
-  ><span class="kw"
-    >data</span
-    > <span class="dt"
-    >List</span
-    > a <span class="fu"
-    >=</span
-    > <span class="dt"
-    >Empty</span
-    > <span class="fu"
-    >|</span
-    > a ::<span class="fu"
-    >:</span
-    > <span class="dt"
-    >List</span
-    > a<br
-     /><br
-     />tail' :: <span class="dt"
-    >List</span
-    > a -&gt; <span class="dt"
-    >List</span
-    > a<br
-     />tail' (_ ::<span class="fu"
-    >:</span
-    > xs) <span class="fu"
-    >=</span
-    > xs<br
-     />tail' <span class="dt"
-    >Empty</span
-    > <span class="fu"
-    >=</span
-    > <span class="fu"
-    >undefined</span
-    ><br
-     /></code
-  ></pre
 ></div>
 <div class="slide">
 <h1
