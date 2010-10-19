@@ -286,6 +286,7 @@ In the interest of simple semantics, how can we make operators not be a special 
 We could make operators regular functions that only have funny parsing rules - which is syntactic sugar.
 
     (+) :: Int -> Int -> Int
+    infixl 6 (+)
 
 Hey, in that case, we can even let the programmer define as many operators as he likes! Say, anything composed of `~!@#$%^&*<>,./?`!
 
@@ -321,6 +322,15 @@ operator form! Specifically, Cons is a good fit, so lets call it `:`:
 
 > listOfNumbers2 = (1 : 1 : 2 : 3 : 5 : 8 : 13 : [])
 
+Operator Precedence
+===================
+
+Function application is always first
+------------------------------------
+
+`(+)` is below `(*)`, `(==)` is very far down, anything less obvious
+will be in parentheses.
+
 Higher Order Functions
 ======================
 
@@ -355,6 +365,7 @@ What if we want to give a value a temporary name?
 >                 h = filter (>p) vs
 >             in (qs l) ++ [p] ++ (qs h)
 > qs [] = []
+> -- (++) :: [a] -> [a] -> [a]
 
 But sometimes we want to write top-down:
 
@@ -1027,6 +1038,11 @@ Any Questions Up Until Now?
 ===========================
 
 Don't worry, we are not done yet...
+
+TODO
+====
+
+if
 
 Lets play a game
 ================
