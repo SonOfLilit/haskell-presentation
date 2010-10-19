@@ -502,6 +502,28 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
 ></div>
 <div class="slide">
 <h1
+>Semantics</h1
+><p
+>When specifying the language, we care about its <em
+  >semantics</em
+  > - how it should be interpreted by a mathematician, more than we care about its implementations on computers, which are welcome to include tricks based on the machine we run on.</p
+></div>
+<div class="slide">
+<h1
+>Referential Transparency</h1
+><p
+>A key to simple semantics is having <code
+  >A = A</code
+  > for all <code
+  >A</code
+  >, and specifically having values never change during the execution of a program, meaning that <em
+  >e.g.</em
+  > we will get the same result from calling any function twice with the same arguments.</p
+><p
+>This is called Preserving Referential Transparency, and the functions are called Pure Functions. Pure code is harder to write, but whole classes of bugs cannot manifest in it.</p
+></div>
+<div class="slide">
+<h1
 >Functions</h1
 ><p
 >We want to be able to define values:</p
@@ -515,10 +537,10 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
      /></code
   ></pre
 ><p
->Lambda calculus is a very nice semantics for functions. Let's use it:</p
+>Lambda calculus is a very nice semantics for functions. Lets use it:</p
 ><pre class="sourceCode haskell"
 ><code
-  >_prev <span class="fu"
+  >prev' <span class="fu"
     >=</span
     > \x -&gt; x <span class="fu"
     >+</span
@@ -526,10 +548,10 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
      /></code
   ></pre
 ><p
->But let's add some syntactic sugar:</p
+>But lets add some syntactic sugar:</p
 ><pre class="sourceCode haskell"
 ><code
-  >_succ x <span class="fu"
+  >succ' x <span class="fu"
     >=</span
     > x <span class="fu"
     >+</span
@@ -541,16 +563,10 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
 <h1
 >Pattern Matching</h1
 ><p
->Math has great syntax for defining functions with multiple cases. Let's use it:</p
+>Math has great syntax for defining functions with multiple cases. Lets use it:</p
 ><pre class="sourceCode haskell"
 ><code
-  >abs' :: <span class="dt"
-    >Int</span
-    > -&gt; <span class="dt"
-    >Int</span
-    ><br
-     />abs' x<br
-     />  <span class="fu"
+  >abs' x <span class="fu"
     >|</span
     > x <span class="fu"
     >&gt;=</span
@@ -559,13 +575,7 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     > <span class="fu"
     >=</span
     > x<br
-     />  <span class="fu"
-    >|</span
-    > x <span class="fu"
-    >&lt;</span
-    > <span class="dv"
-    >0</span
-    > <span class="fu"
+     />abs' x <span class="fu"
     >=</span
     > <span class="fu"
     >-</span
@@ -592,6 +602,8 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     > -&gt; x<br
      />   _ -&gt; <span class="dv"
     >0</span
+    >  <span class="co"
+    >-- '_' means we don't care what the value is</span
     ><br
      /></code
   ></pre
@@ -612,13 +624,17 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
 >What would be the type of a function, then?</p
 ><pre class="sourceCode haskell"
 ><code
-  >_succ :: <span class="dt"
+  >succ' :: <span class="dt"
     >Int</span
     > -&gt; <span class="dt"
     >Int</span
     ><br
      /></code
   ></pre
+><p
+>Of course, we don't want to be <em
+  >forced</em
+  > to write types. Most of the times the compiler can derive them from context.</p
 ></div>
 <div class="slide">
 <h1
@@ -643,7 +659,7 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
      /></code
   ></pre
 ><p
->And how would we use it? Let's use our existing ability to pattern match!</p
+>And how would we use it? Lets use our existing ability to pattern match!</p
 ><pre class="sourceCode haskell"
 ><code
   >not' :: <span class="dt"
@@ -699,12 +715,12 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     ><br
      />firstName (<span class="dt"
     >Name</span
-    > f l) <span class="fu"
+    > f _) <span class="fu"
     >=</span
     > f<br
      />lastName (<span class="dt"
     >Name</span
-    > f l) <span class="fu"
+    > _ l) <span class="fu"
     >=</span
     > l<br
      /></code
@@ -745,7 +761,7 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     ><br
      />label (<span class="dt"
     >Label</span
-    > s x) <span class="fu"
+    > s _) <span class="fu"
     >=</span
     > s<br
      /></code
@@ -763,7 +779,7 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     ><br
      />getName (<span class="dt"
     >Label</span
-    > s n) <span class="fu"
+    > _ n) <span class="fu"
     >=</span
     > n<br
      /></code
@@ -797,7 +813,7 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     > a -&gt; a<br
      />head' (<span class="dt"
     >Cons</span
-    > x xs) <span class="fu"
+    > x _) <span class="fu"
     >=</span
     > x<br
      />head' <span class="dt"
@@ -815,7 +831,7 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     > a<br
      />tail' (<span class="dt"
     >Cons</span
-    > x xs) <span class="fu"
+    > _ xs) <span class="fu"
     >=</span
     > xs<br
      />tail' <span class="dt"
@@ -834,7 +850,9 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
   >undefined</code
   >?</h1
 ><p
->Mathematically, since Haskell is Turing Complete, and we must acommodate for the halting problem, Haskell's semantics must have an extra possible value for every expression, meaning &quot;this calculation gets stuck in an endless loop&quot;. It is called &quot;⊥&quot; and pronounced &quot;bottom&quot; (because it is at the bottom of the information hierarchy for an expression, or in plainer terms, saying that an expression equals bottom doesn't say much).</p
+>Mathematically, since Haskell is Turing Complete, and we must acommodate for the halting problem, Haskell's semantics must have an extra possible value for every expression, meaning &quot;this calculation gets stuck in an endless loop&quot;. It is called &quot;⊥&quot; and pronounced &quot;bottom&quot; (because it is at the bottom of the information hierarchy for an expression, or in plainer terms, <em
+  >saying that an expression equals bottom doesn't say much</em
+  >).</p
 ></div>
 <div class="slide">
 <h1
@@ -858,7 +876,7 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
 <h1
 >List syntactic sugar</h1
 ><p
->In a functional language, lists are very important, so let's give them some syntactic sugar:</p
+>In a functional language, lists are very important, so lets give them some syntactic sugar:</p
 ><pre
 ><code
   >l :: List Int
@@ -900,77 +918,83 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
 ></div>
 <div class="slide">
 <h1
->Polymorphic Types</h1
+>Functions of Multiple Arguments</h1
 ><p
->What is the type of <code
-  >head</code
-  >?</p
+>We should now introduce more semantics for multiple arguments...</p
+><h2
+>Or should we?</h2
+></div>
+<div class="slide">
+<h1
+>Currying</h1
+><p
+>Haskell Curry proposed a representation of multiple-argument functions in lambda calculus as functions that return functions.</p
+><pre class="sourceCode haskell"
+><code
+  >replicate' :: <span class="dt"
+    >Int</span
+    > -&gt; (a -&gt; <span class="dt"
+    >List</span
+    > a)<br
+     /></code
+  ></pre
+><p
+>And how would we implement it?</p
 ><pre
 ><code
-  >For all types `a`, a function from `a` to a list of `a`
+  >replicate' 0 = \a -&gt; Empty
+replicate' n = \a -&gt; Cons a (replicate' (n-1) a)
 </code
   ></pre
-><p
->We can just write that:</p
-><pre class="sourceCode haskell"
-><code
-  >head' :: [a] -&gt; a<br
-     /></code
-  ></pre
-><p
->In types, lets make symbols starting with a non-capital letter variables.</p
 ></div>
 <div class="slide">
 <h1
->Pattern Matching</h1
+>Syntactic Sugar!</h1
 ><p
->Now, to implement. Let's steal math's syntax for defining functions with cases:</p
+>Of course, this would deserve some nicer way to express it.</p
 ><pre class="sourceCode haskell"
 ><code
-  >head' (x <span class="fu"
-    >:</span
-    > _) <span class="fu"
+  >replicate' <span class="dv"
+    >0</span
+    > _ <span class="fu"
     >=</span
-    > x<br
-     />head' [] <span class="fu"
+    > <span class="dt"
+    >Empty</span
+    ><br
+     />replicate' n a <span class="fu"
     >=</span
-    > <span class="fu"
-    >undefined</span
-    ><br
-     /><span class="co"
-    >-- undefined :: a</span
-    ><br
-     /></code
-  ></pre
-></div>
-<div class="slide">
-<h1
->Functions, Lists, Pattern Matching</h1
-></div>
-<div class="slide">
-<h1
->Composition</h1
-><pre class="sourceCode haskell"
-><code
-  >second :: [a] -&gt; a<br
-     />second <span class="fu"
-    >=</span
-    > <span class="fu"
-    >head</span
-    > <span class="fu"
-    >.</span
-    > <span class="fu"
-    >tail</span
-    ><br
-     /><span class="co"
-    >-- tail :: [a] -&gt; [a]</span
-    ><br
+    > <span class="dt"
+    >Cons</span
+    > a (replicate' (n<span class="fu"
+    >-</span
+    ><span class="dv"
+    >1</span
+    >) a)<br
      /></code
   ></pre
 ></div>
 <div class="slide">
 <h1
 >Operators</h1
+><p
+>In the interest of simple semantics, how can we make operators not be a special case?</p
+><p
+>We could make operators regular functions that only have funny parsing rules - which is syntactic sugar.</p
+><pre
+><code
+  >(+) :: Int -&gt; Int -&gt; Int
+</code
+  ></pre
+><p
+>Hey, in that case, we can even let the programmer define as many operators as he likes! Say, anything composed of <code
+  >~!@#$%^&amp;*&lt;&gt;,./?</code
+  >!</p
+></div>
+<div class="slide">
+<h1
+>Operator Examples</h1
+><p
+>Define an operator:</p
 ><pre class="sourceCode haskell"
 ><code
   >(=~) :: <span class="dt"
@@ -1009,6 +1033,8 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     ><br
      /></code
   ></pre
+><p
+>Use an operator as a function by enclosing it in parentheses:</p
 ><pre class="sourceCode haskell"
 ><code
   >half :: <span class="dt"
@@ -1026,9 +1052,17 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     >.</span
     ><span class="dv"
     >0</span
-    >)<br
+    >)  <span class="co"
+    >-- Look, 'ma, no divisor! I'm currying!</span
+    ><br
      /></code
   ></pre
+></div>
+<div class="slide">
+<h1
+>Operator Examples - 2</h1
+><p
+>There should be, for symmetry and comfort, a way to use a function as an operator. Say, by wrapping it with backticks:</p
 ><pre class="sourceCode haskell"
 ><code
   >xor :: <span class="dt"
@@ -1087,12 +1121,232 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     >)<br
      /></code
   ></pre
+><p
+>What about data constructors? They should also be able to have operator form! Specifically, Cons is a good fit, so lets call it <code
+  >:</code
+  >:</p
+><pre class="sourceCode haskell"
+><code
+  >listOfNumbers2 <span class="fu"
+    >=</span
+    > (<span class="dv"
+    >1</span
+    > <span class="fu"
+    >:</span
+    > <span class="dv"
+    >1</span
+    > <span class="fu"
+    >:</span
+    > <span class="dv"
+    >2</span
+    > <span class="fu"
+    >:</span
+    > <span class="dv"
+    >3</span
+    > <span class="fu"
+    >:</span
+    > <span class="dv"
+    >5</span
+    > <span class="fu"
+    >:</span
+    > <span class="dv"
+    >8</span
+    > <span class="fu"
+    >:</span
+    > <span class="dv"
+    >13</span
+    > <span class="fu"
+    >:</span
+    > [])<br
+     /></code
+  ></pre
 ></div>
 <div class="slide">
 <h1
->Indentation, Currying, ...</h1
-><h2
->... Higher-Order Functions, Operators, Lazyness, Type Inference</h2
+>Higher Order Functions</h1
+><p
+>Our semantics allow for Higher Order Functions, <em
+  >i.e.</em
+  > functions that receive or return functions:</p
+><pre class="sourceCode haskell"
+><code
+  >map' :: (a -&gt; b) -&gt; [a] -&gt; [b]<br
+     />map' f (a<span class="fu"
+    >:</span
+    ><span class="kw"
+    >as</span
+    >) <span class="fu"
+    >=</span
+    > f a <span class="fu"
+    >:</span
+    > map' f <span class="kw"
+    >as</span
+    ><br
+     />map' _ [] <span class="fu"
+    >=</span
+    > []<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Composition</h1
+><p
+>Function composition is so useful it should have its own operator, so lets give it the dot, similar to math notation.</p
+><pre class="sourceCode haskell"
+><code
+  >second, third :: [a] -&gt; a<br
+     />second x <span class="fu"
+    >=</span
+    > (<span class="fu"
+    >head</span
+    > <span class="fu"
+    >.</span
+    > <span class="fu"
+    >tail</span
+    >) x<br
+     />third <span class="fu"
+    >=</span
+    > <span class="fu"
+    >head</span
+    > <span class="fu"
+    >.</span
+    > <span class="fu"
+    >tail</span
+    > <span class="fu"
+    >.</span
+    > <span class="fu"
+    >tail</span
+    ><br
+     /></code
+  ></pre
+><p
+>It gets fun:</p
+><pre class="sourceCode haskell"
+><code
+  >positiveSubSums <span class="fu"
+    >=</span
+    > <span class="fu"
+    >filter</span
+    > (<span class="fu"
+    >&gt;</span
+    ><span class="dv"
+    >0</span
+    >) <span class="fu"
+    >.</span
+    > <span class="fu"
+    >map</span
+    > <span class="fu"
+    >sum</span
+    ><br
+     /><span class="co"
+    >-- filter :: (a -&gt; Bool) -&gt; [a] -&gt; [a]</span
+    ><br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Scopes and Name Binding</h1
+><p
+>What if we want to give a value a temporary name?</p
+><pre class="sourceCode haskell"
+><code
+  >qs (p<span class="fu"
+    >:</span
+    >vs) <span class="fu"
+    >=</span
+    > <span class="kw"
+    >let</span
+    > l <span class="fu"
+    >=</span
+    > <span class="fu"
+    >filter</span
+    > (<span class="fu"
+    >&lt;=</span
+    >p) vs<br
+     />                h <span class="fu"
+    >=</span
+    > <span class="fu"
+    >filter</span
+    > (<span class="fu"
+    >&gt;</span
+    >p) vs<br
+     />            <span class="kw"
+    >in</span
+    > (qs l) <span class="fu"
+    >++</span
+    > [p] <span class="fu"
+    >++</span
+    > (qs h)<br
+     />qs [] <span class="fu"
+    >=</span
+    > []<br
+     /></code
+  ></pre
+><p
+>But sometimes we want to write top-down:</p
+><pre class="sourceCode haskell"
+><code
+  >solutions a b c <span class="fu"
+    >=</span
+    > (x<span class="fu"
+    >-</span
+    >y, x<span class="fu"
+    >+</span
+    >y)<br
+     />  <span class="kw"
+    >where</span
+    > x <span class="fu"
+    >=</span
+    > (<span class="fu"
+    >-</span
+    >b) <span class="fu"
+    >/</span
+    > (<span class="dv"
+    >2</span
+    ><span class="fu"
+    >*</span
+    >a)<br
+     />        y <span class="fu"
+    >=</span
+    > ((b<span class="fu"
+    >*</span
+    >b <span class="fu"
+    >-</span
+    > <span class="dv"
+    >4</span
+    ><span class="fu"
+    >*</span
+    >a<span class="fu"
+    >*</span
+    >c) <span class="fu"
+    >**</span
+    > <span class="dv"
+    >0</span
+    ><span class="fu"
+    >.</span
+    ><span class="dv"
+    >5</span
+    >) <span class="fu"
+    >/</span
+    > (<span class="dv"
+    >2</span
+    ><span class="fu"
+    >*</span
+    >a)<br
+     /></code
+  ></pre
+></div>
+<div class="slide">
+<h1
+>Lazyness</h1
+><p
+>Remember Referential Transparency?</p
+><p
+>It means that the order of evaluation of function arguments doesn't matter. So we can even neglect to evaluate parameters before we catually need them (e.g. to be printed to the screen)!</p
+><p
+>This allows for an excellent way to calculate the n-th fibonacci number:</p
 ><pre class="sourceCode haskell"
 ><code
   >fib n <span class="fu"
@@ -1227,26 +1481,35 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
 <div class="slide">
 <h1
 >Type Classes</h1
-><pre class="sourceCode haskell"
+><p
+>Can we express the function <code
+  >maximum</code
+  > that finds the maximum in a list? Well, we could, if it were a list of numbers, then we'd have <code
+  >(&gt;)</code
+  > to compare with, but we couldn't for <code
+  >[a]</code
+  >, because then we'd know nothing about the values... And speaking of that, what <em
+  >is</em
+  > the type of <code
+  >(&gt;)</code
+  >?</p
+><p
+>We want to be able to say...</p
+><pre
 ><code
-  >maxSucc :: (<span class="kw"
-    >Ord</span
-    > a) =&gt; [a] -&gt; a<br
-     />maxSucc xs <span class="fu"
-    >=</span
-    > <span class="fu"
-    >maximum</span
-    > (delete (<span class="fu"
-    >maximum</span
-    > xs) xs)<br
-     /><span class="co"
-    >-- maximum :: (Ord a) =&gt; [a] -&gt; a</span
-    ><br
-     /><span class="co"
-    >-- delete :: a -&gt; [a] -&gt; [a]</span
-    ><br
-     /></code
+  >maximum :: (Ord a) =&gt; [a] -&gt; a
+</code
   ></pre
+><p
+>and know that <code
+  >(&gt;) :: a -&gt; a -&gt; Ordering</code
+  >* is defined on <code
+  >a</code
+  >.</p
+><p
+>* <code
+  >data Ordering = GT | EQ | LT</code
+  ></p
 ></div>
 <div class="slide">
 <h1
@@ -1269,6 +1532,12 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     > <span class="dt"
     >Peano</span
     ><br
+     /><span class="co"
+    >-- as the compiler for default implementations for some boring </span
+    ><br
+     /><span class="co"
+    >-- built-in type classes. Can instead override.</span
+    ><br
      />    <span class="kw"
     >deriving</span
     > (<span class="kw"
@@ -1287,9 +1556,6 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     >Peano</span
     > <span class="kw"
     >where</span
-    ><br
-     />    <span class="co"
-    >-- compare :: Peano -&gt; Peano -&gt; Ordering</span
     ><br
      />    <span class="co"
     >-- data Ordering = LT | EQ | GT deriving Eq</span
@@ -1572,26 +1838,23 @@ window.onload=startup;window.onresize=function(){setTimeout('fontScale()',50);}
     >where</span
     > numbers <span class="fu"
     >=</span
-    > [<span class="fu"
+    > <span class="fu"
+    >map</span
+    > (\i -&gt; <span class="fu"
     >show</span
     > i <span class="fu"
     >++</span
     > <span class="st"
     >&quot;:&quot;</span
-    > <span class="fu"
-    >|</span
-    > i &lt;- [<span class="dv"
+    >) [<span class="dv"
     >1</span
     >,<span class="dv"
     >2</span
     ><span class="fu"
     >..</span
-    >]]<br
+    >]<br
      /><span class="co"
     >-- lines :: String -&gt; [String]</span
-    ><br
-     /><span class="co"
-    >-- map :: (a -&gt; b) -&gt; [a] -&gt; [b]</span
     ><br
      /><span class="co"
     >-- unlines :: [String] -&gt; String</span
@@ -2698,7 +2961,7 @@ simpleGun (Point2 x0 y0) = proc gi -&gt; do
 ></div>
 <div class="slide">
 <h1
->Let's play a game</h1
+>Lets play a game</h1
 ><p
 >We all know Nim.</p
 ><ul
@@ -3296,7 +3559,7 @@ simpleGun (Point2 x0 y0) = proc gi -&gt; do
 ></div>
 <div class="slide">
 <h1
->Let's play!</h1
+>Lets play!</h1
 ><pre class="sourceCode haskell"
 ><code
   >humanVsComputerNim <span class="fu"
@@ -3557,7 +3820,7 @@ simpleGun (Point2 x0 y0) = proc gi -&gt; do
 ></div>
 <div class="slide">
 <h1
->And let's play!</h1
+>And lets play!</h1
 ><pre class="sourceCode haskell"
 ><code
   >fastComputerMove nim <span class="fu"

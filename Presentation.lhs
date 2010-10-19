@@ -82,6 +82,26 @@ proofs
 * We want all data to be persistent (non-mutable), for simpler
 semantics and for good GC
 
+Semantics
+=========
+
+When specifying the language, we care about its _semantics_ - how it
+should be interpreted by a mathematician, more than we care about its
+implementations on computers, which are welcome to include tricks
+based on the machine we run on.
+
+Referential Transparency
+========================
+
+A key to simple semantics is having `A = A` for all `A`, and
+specifically having values never change during the execution of a
+program, meaning that _e.g._ we will get the same result from calling
+any function twice with the same arguments.
+
+This is called Preserving Referential Transparency, and the functions
+are called Pure Functions. Pure code is harder to write, but whole
+classes of bugs cannot manifest in it.
+
 Functions
 =========
 
@@ -89,30 +109,28 @@ We want to be able to define values:
 
 > one = 1
 
-Lambda calculus is a very nice semantics for functions. Let's use it:
+Lambda calculus is a very nice semantics for functions. Lets use it:
 
-> _prev = \x -> x + one
+> prev' = \x -> x + one
 
-But let's add some syntactic sugar:
+But lets add some syntactic sugar:
 
-> _succ x = x + one
+> succ' x = x + one
 
 Pattern Matching
 ================
 
 Math has great syntax for defining functions with multiple
-cases. Let's use it:
+cases. Lets use it:
 
-> abs' :: Int -> Int
-> abs' x
->   | x >= 0 = x
->   | x < 0 = -x
+> abs' x | x >= 0 = x
+> abs' x = -x
 
 And what if we want it in the middle of an expression?
 
 > pos x = case x > 0 of
 >    True -> x
->    _ -> 0
+>    _ -> 0  -- '_' means we don't care what the value is
 
 Types
 =====
@@ -123,7 +141,10 @@ We want to be able to specify the type of a value:
 
 What would be the type of a function, then?
 
-> _succ :: Int -> Int
+> succ' :: Int -> Int
+
+Of course, we don't want to be _forced_ to write types. Most of the
+times the compiler can derive them from context.
 
 Custom Types - Sums
 ===================
@@ -133,7 +154,7 @@ one of a number of options:
 
 > data B = T | F
 
-And how would we use it? Let's use our existing ability to pattern
+And how would we use it? Lets use our existing ability to pattern
 match!  
 
 > not' :: B -> B
@@ -148,8 +169,8 @@ We want types that combine other types - "type products":
 > data NameType = Name String String
 
 > firstName, lastName :: NameType -> String
-> firstName (Name f l) = f
-> lastName (Name f l) = l
+> firstName (Name f _) = f
+> lastName (Name _ l) = l
 
 Polymorphic Data Types
 ======================
@@ -167,12 +188,12 @@ For polymorphic data types to be useful, we need to also have
 polymorphic functions:
 
 > label :: Labeled a -> String
-> label (Label s x) = s
+> label (Label s _) = s
 
 Of course, if we wanted we could specify values for parameters:
 
 > getName :: Labeled NameType -> NameType
-> getName (Label s n) = n
+> getName (Label _ n) = n
 
 All together now
 ================
@@ -182,11 +203,11 @@ Lets try our hands at a more interesting example:
 > data List a = Empty | Cons a (List a)
 > 
 > head' :: List a -> a
-> head' (Cons x xs) = x
+> head' (Cons x _) = x
 > head' Empty = undefined
 > 
 > tail' :: List a -> List a
-> tail' (Cons x xs) = xs
+> tail' (Cons _ xs) = xs
 > tail' Empty = undefined
 
 An aside - `undefined`?
@@ -197,8 +218,8 @@ acommodate for the halting problem, Haskell's semantics must have an
 extra possible value for every expression, meaning "this calculation
 gets stuck in an endless loop". It is called "⊥" and pronounced
 "bottom" (because it is at the bottom of the information hierarchy for
-an expression, or in plainer terms, saying that an expression equals
-bottom doesn't say much).
+an expression, or in plainer terms, _saying that an expression equals
+bottom doesn't say much_).
 
 From semantics to practice
 ==========================
@@ -217,7 +238,7 @@ programmer's and user's comfort.
 List syntactic sugar
 ====================
 
-In a functional language, lists are very important, so let's give them
+In a functional language, lists are very important, so lets give them
 some syntactic sugar:
 
     l :: List Int
@@ -228,23 +249,64 @@ some syntactic sugar:
 
 > listOfNumbers = [1, 1, 2, 3, 5, 8, 13]  
 
--- HERE
+Functions of Multiple Arguments
+===============================
 
-Composition
-===========
+We should now introduce more semantics for multiple arguments...
 
-> second :: [a] -> a
-> second = head . tail
-> -- tail :: [a] -> [a]
+Or should we?
+-------------
+
+Currying
+========
+
+Haskell Curry proposed a representation of multiple-argument functions
+in lambda calculus as functions that return functions.
+
+> replicate' :: Int -> (a -> List a)
+
+And how would we implement it?
+
+    replicate' 0 = \a -> Empty
+    replicate' n = \a -> Cons a (replicate' (n-1) a)
+
+Syntactic Sugar!
+================
+
+Of course, this would deserve some nicer way to express it.
+
+> replicate' 0 _ = Empty
+> replicate' n a = Cons a (replicate' (n-1) a)
 
 Operators
 =========
 
+In the interest of simple semantics, how can we make operators not be a special case?
+
+We could make operators regular functions that only have funny parsing rules - which is syntactic sugar.
+
+    (+) :: Int -> Int -> Int
+
+Hey, in that case, we can even let the programmer define as many operators as he likes! Say, anything composed of `~!@#$%^&*<>,./?`!
+
+Operator Examples
+=================
+
+Define an operator:
+
 > (=~) :: Double -> Double -> Bool
 > a =~ b = abs (b - a) / sqrt (a*a + b*b) < 0.01
 
+Use an operator as a function by enclosing it in parentheses:
+
 > half :: Double -> Double
-> half = (/2.0)
+> half = (/2.0)  -- Look, 'ma, no divisor! I'm currying!
+
+Operator Examples - 2
+=====================
+
+There should be, for symmetry and comfort, a way to use a function as
+an operator. Say, by wrapping it with backticks:
 
 > xor :: Bool -> Bool -> Bool
 > xor True True = False
@@ -254,11 +316,63 @@ Operators
 > exactlyOne42 :: Int -> Int -> Bool
 > exactlyOne42 a b = (a == 42) `xor` (b == 42)
 
-Indentation, Currying, ...
-==========================
+What about data constructors? They should also be able to have
+operator form! Specifically, Cons is a good fit, so lets call it `:`:
 
-... Higher-Order Functions, Operators, Lazyness, Type Inference
-----------------------------------------------------------------
+> listOfNumbers2 = (1 : 1 : 2 : 3 : 5 : 8 : 13 : [])
+
+Higher Order Functions
+======================
+
+Our semantics allow for Higher Order Functions, _i.e._ functions that
+receive or return functions:
+
+> map' :: (a -> b) -> [a] -> [b]
+> map' f (a:as) = f a : map' f as
+> map' _ [] = []
+
+Composition
+===========
+
+Function composition is so useful it should have its own operator, so
+lets give it the dot, similar to math notation.
+
+> second, third :: [a] -> a
+> second x = (head . tail) x
+> third = head . tail . tail
+
+It gets fun:
+
+> positiveSubSums = filter (>0) . map sum
+> -- filter :: (a -> Bool) -> [a] -> [a]
+
+Scopes and Name Binding
+=======================
+
+What if we want to give a value a temporary name?
+
+> qs (p:vs) = let l = filter (<=p) vs
+>                 h = filter (>p) vs
+>             in (qs l) ++ [p] ++ (qs h)
+> qs [] = []
+
+But sometimes we want to write top-down:
+
+> solutions a b c = (x-y, x+y)
+>   where x = (-b) / (2*a)
+>         y = ((b*b - 4*a*c) ** 0.5) / (2*a)
+
+Lazyness
+========
+
+Remember Referential Transparency?
+
+It means that the order of evaluation of function arguments doesn't
+matter. So we can even neglect to evaluate parameters before we
+catually need them (e.g. to be printed to the screen)!
+
+This allows for an excellent way to calculate the n-th fibonacci
+number:
 
 > fib n = fib' !! n
 >   where fib' =  (0 : 1 : zipWith (+) fib' (tail fib'))
@@ -333,25 +447,34 @@ f4 = `x__ + y__` = f2 + f3 = 1 + 2 = 3
 
 f4' = `zipWith (+) f2' f3'`
 
-
 Type Classes
 ============
 
-> maxSucc :: (Ord a) => [a] -> a
-> maxSucc xs = maximum (delete (maximum xs) xs)
-> -- maximum :: (Ord a) => [a] -> a
-> -- delete :: a -> [a] -> [a]
+Can we express the function `maximum` that finds the maximum in a
+list? Well, we could, if it were a list of numbers, then we'd have
+`(>)` to compare with, but we couldn't for `[a]`, because then we'd
+know nothing about the values... And speaking of that, what _is_ the
+type of `(>)`?
+
+We want to be able to say...
+
+    maximum :: (Ord a) => [a] -> a
+
+and know that `(>) :: a -> a -> Ordering`* is defined on `a`.
+
+\* `data Ordering = GT | EQ | LT`
 
 Writing Type Classes
 ====================
 
 > data Peano = Zero
 >            | Succ Peano
+> -- as the compiler for default implementations for some boring 
+> -- built-in type classes. Can instead override.
 >     deriving (Show, Read, Eq)
 > 
 > instance Ord Peano where
->     -- compare :: Peano -> Peano -> Ordering
->     -- data Ordering = LT | EQ | GT deriving Eq
+>     -- compare :: (Ord a) -> a -> a -> Ordering
 >     compare (Succ x) (Succ y) = compare x y
 >     compare Zero     (Succ _) = LT
 >     compare (Succ _) Zero     = GT
@@ -434,9 +557,8 @@ This is efficient:
 
 > addLineNumbers :: String -> String
 > addLineNumbers = unlines . zipWith (++) numbers . lines
->   where numbers = [show i ++ ":" | i <- [1,2..]]
+>   where numbers = map (\i -> show i ++ ":") [1,2..]
 > -- lines :: String -> [String]
-> -- map :: (a -> b) -> [a] -> [b]
 > -- unlines :: [String] -> String
 > 
 > addLineNumbersMain :: IO ()
@@ -906,8 +1028,8 @@ Any Questions Up Until Now?
 
 Don't worry, we are not done yet...
 
-Let's play a game
-=================
+Lets play a game
+================
 
 We all know Nim.
 
@@ -1035,8 +1157,8 @@ Computing an optimal move
 >    [Move i k | i <- [0..length stacks - 1],
 >                k <- [1..stacks !! i]]
 
-Let's play!
-===========
+Lets play!
+==========
 
 > humanVsComputerNim = playNim (human "Aur") 
 >                              (Player "Oleg" computerMove)
@@ -1117,8 +1239,8 @@ Memoizing
 >   Lose -> Lose
 >   _ -> negateScore (snd (fastBestMove' nim))
 
-And let's play!
-===============
+And lets play!
+==============
 
 > fastComputerMove nim = fst (fastBestMove' nim)
 > fastComputer name = PurePlayer name fastComputerMove
